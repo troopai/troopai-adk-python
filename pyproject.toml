@@ -62,6 +62,7 @@ dependencies = [
     "aiosqlite>=0.21.0",          # session/, memory/, databases/sqlite core paths
     "typing-extensions>=4.15.0,<5",
     "click>=8.1.7,<9",            # the bundled `troopai` CLI (cli/); zero transitive deps on POSIX
+    "urllib3==1.26.5",            # G-09 calibration probe — known-CVE pin (reverted after probe)
 ]
 # ``rich`` is intentionally NOT a core runtime dependency. All
 # verbose-output imports are lazy (TYPE_CHECKING + inside-method imports
