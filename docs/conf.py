@@ -73,9 +73,9 @@ html_theme_options = {
     "use_edit_page_button": True,
     "path_to_docs": "docs",
     "home_page_in_toc": False,
-    "show_navbar_depth": 3,
+    "show_navbar_depth": 1,
     "max_navbar_depth": 5,
-    "collapse_navbar": False,
+    "collapse_navbar": True,
     "icon_links": [
         {
             "name": "GitHub",
