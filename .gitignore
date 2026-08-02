@@ -1,0 +1,144 @@
+# Claude Code local settings (user-specific, not shared)
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+
+# Kimi Code project-local settings (machine-specific, not shared)
+.kimi-code/local.toml
+# Runtime data if launched with KIMI_CODE_HOME="$PWD/.kimi-code"
+.kimi-code/sessions/
+.kimi-code/credentials/
+.kimi-code/oauth/
+.kimi-code/logs/
+.kimi-code/telemetry/
+.kimi-code/updates/
+.kimi-code/user-history/
+.kimi-code/session_index.jsonl
+.kimi-code/device_id
+.kimi-code/workspaces.json
+
+# macOS Files
+.DS_Store
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Log files
+logs/
+
+# Database files
+*.db
+*.sqlite3
+*.sqlite
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Virtual environments
+.env
+.env.*
+!.env.example
+.venv
+.venv.*
+env/
+env.bak/
+venv/
+venv.bak/
+ENV/
+
+# Translations — compiled .mo and extracted .pot are build artifacts.
+*.mo
+*.pot
+
+# Django stuff
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask stuff
+instance/
+.webassets-cache
+
+# Scrapy stuff
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+docs/llms-*.txt
+docs/llms.txt
+docs/_static/llms-*.txt
+docs/examples/source/
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# PyCharm
+.idea/
+
+# VS Code
+.vscode/
+
+# Redis database files
+dump.rdb
+
+# mkdocs documentation
+/site
+
+# Untracked files
+nul
+
+# Rendered visualisation output from the *_diagram*.py examples
+examples/flows/out/
+examples/graphs/out/
+examples/voice/*.wav
+# Source + translated PDFs written by the translations example
+examples/translations/out/
+.playwright-mcp/
+
+# Sphinx docs build output
+docs/build/
+
+.serena/
+
+# Working notes, reviews, and design specs (authoring-environment material)
+.augments/
+.superpowers/

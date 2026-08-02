@@ -1,0 +1,8 @@
+{
+  "$schema": "../../src/troopai/adk/types/config/topology_config.schema.json",
+  "agents": {
+    "triage": {"config_path": "triage.json"},
+    "spanish": {"config_path": "spanish.json"}
+  },
+  "entry": "triage"
+}

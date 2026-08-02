@@ -1,0 +1,78 @@
+name: Integration
+
+# Tests that need real infrastructure: a Postgres service container
+# (checkpointer / ledger / pgvector) and the Docker daemon (sandbox).
+# GitHub-hosted ubuntu runners ship a running Docker daemon, so the Docker
+# integration tests execute here without extra setup. Live-LLM e2e tests run
+# in nightly.yml, not here (no API keys are provided to this workflow).
+#
+# NOTE: the exact install extras and the Postgres-binary path are the most
+# likely things to need tuning on the first real CI run — see comments below.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - "src/**"
+      - "tests/integration/**"
+      - "tests/unit/**/*postgres*.py"
+      - "tests/unit/**/*pgvector*.py"
+      - "pyproject.toml"
+      - ".github/workflows/integration.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: integration-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  integration:
+    name: Integration tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        # pgvector image so the vector-store test has the extension available.
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: troopai_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      # The pgvector store test reads this DSN and skips if it is unset.
+      TROOPAI_TEST_PG_DSN: postgresql://postgres:postgres@localhost:5432/troopai_test
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      # pytest-postgresql's `postgresql_proc` fixture launches its OWN server
+      # and needs the PostgreSQL server binaries on PATH (the runner ships
+      # only the client). Install them and expose the highest-version bin dir.
+      - name: Install PostgreSQL server binaries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql postgresql-contrib
+          ls -d /usr/lib/postgresql/*/bin | sort -V | tail -1 >> "$GITHUB_PATH"
+      # The pgvector store registers the `vector` type on connect, which fails
+      # ("vector type not found in the database") unless the extension exists.
+      - name: Enable pgvector extension on the test database
+        run: PGPASSWORD=postgres psql -h localhost -U postgres -d troopai_test -c "CREATE EXTENSION IF NOT EXISTS vector;"
+      # `.[dev]` covers a2a / mcp / temporal; sandbox-docker adds the docker
+      # SDK the real-daemon sandbox test imports.
+      - run: pip install -e ".[dev,sandbox-docker]"
+      - name: Integration suite (Docker, Temporal, MCP, A2A, swarms, graphs)
+        run: pytest tests/integration -n auto --dist loadfile
+      - name: Service-backed unit tests (Postgres + pgvector)
+        run: pytest tests/unit -m postgres

@@ -1,0 +1,50 @@
+name: 🔌 LLM provider issue
+description: A problem specific to a provider or model path (litellm or a native SDK)
+labels: ["bug", "provider"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for issues tied to a specific provider or model — wrong wire
+        conversion, a missing/mismapped parameter, streaming or tool-call
+        quirks, token/cost mismatches. See `docs/providers/` first.
+  - type: dropdown
+    id: provider
+    attributes:
+      label: Provider path
+      options:
+        - litellm
+        - Native Anthropic (AnthropicLLM)
+        - Native OpenAI (ChatCompletions / Responses)
+        - Native Gemini (GeminiLLM)
+        - Other (describe below)
+    validations:
+      required: true
+  - type: input
+    id: model
+    attributes:
+      label: Model ID
+      placeholder: "claude-..., gpt-..., gemini-..."
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: What goes wrong
+      description: Expected vs actual, and whether it reproduces on the litellm path too.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal reproducer
+      render: python
+    validations:
+      required: true
+  - type: input
+    id: adk-version
+    attributes:
+      label: ADK version
+      placeholder: "0.1.0"
+    validations:
+      required: true

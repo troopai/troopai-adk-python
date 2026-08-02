@@ -1,0 +1,28 @@
+{#- Custom language switcher for sphinx-book-theme.
+
+Renders three links pointing at sibling language subdirs (../<lang>/...).
+The current language's link is marked aria-current="page" and styled to
+indicate the active language.
+
+We compute the relative path back to the build/html/ root by prepending
+"../" once per directory component in the current page's name, plus one
+extra "../" to climb out of the language subdir itself. From there we
+descend into the target language and link to its index page.
+
+Build all three languages and the switcher resolves correctly for every
+page depth.
+-#}
+<div class="lang-switcher" role="navigation" aria-label="Language switcher">
+  {%- set current_lang = language|default("en") -%}
+  {%- set langs = [("en", "EN"), ("fr", "FR"), ("de", "DE")] -%}
+  {#- depth = number of "/" in pagename; add 1 to also exit the lang subdir -#}
+  {%- set depth = pagename.split("/")|length -%}
+  {%- set root = "../" * depth -%}
+  {%- for code, label in langs -%}
+    {%- if code == current_lang -%}
+      <span class="lang-switcher__link lang-switcher__link--current" aria-current="page">{{ label }}</span>
+    {%- else -%}
+      <a class="lang-switcher__link" href="{{ root }}{{ code }}/index.html">{{ label }}</a>
+    {%- endif -%}
+  {%- endfor -%}
+</div>

@@ -1,0 +1,9 @@
+{
+  "$schema": "../../src/troopai/adk/types/config/agent_node_config.schema.json",
+  "name": "triage",
+  "system_prompt": "If the user writes in Spanish, hand off to the spanish agent. Otherwise answer briefly in English.",
+  "llm": "claude-haiku-4-5-20251001",
+  "handoffs": [
+    {"target": "spanish", "description": "Handle requests written in Spanish."}
+  ]
+}

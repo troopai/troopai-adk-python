@@ -1,0 +1,679 @@
+[build-system]
+# setuptools>=70.0 closes CVE-2024-6345 (RCE via crafted URL in
+# package_index.py's download_url flow). Zero-cost bump — no breaking
+# changes between 68 and 70 for setuptools.build_meta consumers.
+requires = ["setuptools>=70.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "troopai-adk-python"
+version = "0.1.0"
+description = "TroopAI Agent Development Kit — a lightweight, provider-agnostic Python framework for building multi-agent workflows"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.12,<3.14"
+authors = [{ name = "TroopAI", email = "pegpeg042@gmail.com" }]
+maintainers = [{ name = "Peguy Njoyim", email = "pegpeg042@gmail.com" }]
+keywords = [
+    "agents",
+    "llm",
+    "multi-agent",
+    "agentic",
+    "litellm",
+    "openai",
+    "anthropic",
+    "gemini",
+    "mcp",
+    "opentelemetry",
+    "swarm",
+    "graph",
+    "handoff",
+    "tool-use",
+    "streaming",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+
+# -------------------------------------------------------------------------
+# Core runtime dependencies.
+#
+# Every top-level import in src/troopai/adk/ resolves to one of these.
+# Optional providers / exporters live under [project.optional-dependencies]
+# and are gated behind try/except or TYPE_CHECKING in the source.
+# -------------------------------------------------------------------------
+dependencies = [
+    "litellm>=1.80.9,<2",        # default LLM backend — llms/__init__.py imports LiteLLM unconditionally
+    "pydantic>=2.12.5,<3",       # validation across types/, schemas/, validators/, tracing/
+    "griffe>=1.15.0",             # docstring parsing in tools/function_tool + schemas/function_schema
+    "aiosqlite>=0.21.0",          # session/, memory/, databases/sqlite core paths
+    "typing-extensions>=4.15.0,<5",
+    "click>=8.1.7,<9",            # the bundled `troopai` CLI (cli/); zero transitive deps on POSIX
+]
+# ``rich`` is intentionally NOT a core runtime dependency. All
+# verbose-output imports are lazy (TYPE_CHECKING + inside-method imports
+# in ``verbose/renderer.py`` and ``verbose/panel_renderer.py``), so
+# ``pip install troopai-adk-python`` works without it. Install the optional
+# ``[verbose]`` extra to enable the Rich-backed panel + line renderers.
+
+# -------------------------------------------------------------------------
+# Optional dependency groups.
+#
+# Install with:   pip install 'troopai-adk-python[anthropic,openai,otel,mcp,viz,verbose]'
+#                 pip install 'troopai-adk-python[all]'             # every feature extra
+#                 pip install 'troopai-adk-python[dev]'             # contributors
+# -------------------------------------------------------------------------
+[project.optional-dependencies]
+
+# --- Feature extras (shipped to ADK consumers) ---------------------------
+
+# Native Anthropic SDK path — alternative to litellm for Claude models.
+# Activates AnthropicLLM. See src/troopai/adk/llms/anthropic/.
+anthropic = ["anthropic>=0.75.0"]
+
+# Native OpenAI SDK path — alternative to litellm for OpenAI models.
+# Activates OpenAIChatCompletionsLLM and OpenAIResponsesLLM. The 2.0
+# floor matches the v2 SDK release where ``responses.create()`` and
+# the ``omit`` sentinel stabilised; bump if a newer Responses-API
+# parameter (e.g. ``prompt_cache_retention``) is required.
+# See src/troopai/adk/llms/openai/.
+openai = ["openai>=2.0.0"]
+
+# Voice pipeline — speech-to-text + text-to-speech. Builds on the native
+# OpenAI SDK path (OpenAISTTModel / OpenAITTSModel). `websockets` powers the
+# realtime transcription session; `numpy` converts captured microphone sample
+# arrays to PCM (raw PCM bytes need no extra). Both are soft-imported, so the
+# core voice ABCs and the buffered path import without them.
+# See src/troopai/adk/voice/ and src/troopai/adk/llms/openai/openai_stt.py.
+voice = ["troopai-adk-python[openai]", "websockets>=13.0", "numpy>=1.26"]
+
+# Native Google GenAI SDK path — alternative to litellm for Gemini
+# models. Activates GeminiLLM (single class supporting both the
+# Gemini Developer API and Vertex AI via the SDK's vertexai flag).
+# See src/troopai/adk/llms/gemini/.
+gemini = ["google-genai>=1.0.0"]
+
+# Model Context Protocol client. Enables MCPServer integration.
+# See src/troopai/adk/mcp/.
+mcp = ["mcp>=1.24.0"]
+
+# Agent-to-Agent (A2A) protocol — peer client + expose local Agents
+# as A2A servers. The [http-server] extra pulls in starlette and
+# sse-starlette for the server path. Client-only deployments still
+# work without a server runtime — the import guard surfaces missing
+# dependencies as a clear ImportError.
+# See src/troopai/adk/a2a/.
+a2a = ["a2a-sdk[http-server]>=1.0.0"]
+
+# HTTP serving layer — the plain-REST surface (POST /run, POST /run_sse)
+# and health routes (GET /healthz, GET /readyz) built on Starlette +
+# sse-starlette. This extra carries only the ASGI *app* stack; the
+# framework never imports a server runtime (uvicorn). The A2A surface is a
+# separate extra that the serving app mounts when present.
+# See src/troopai/adk/serving/.
+server = ["starlette>=0.37", "sse-starlette>=2.0"]
+
+# `troopai serve` — runs the serving app (REST + health, plus the A2A
+# surface) under uvicorn. The framework itself never imports uvicorn (the
+# developer owns the ASGI runtime); only the CLI `serve` command does,
+# behind a guiding ImportError. See src/troopai/adk/cli/serve.py.
+serve = ["troopai-adk-python[server,a2a]", "uvicorn>=0.30"]
+
+# OpenTelemetry tracing bridge. Install to enable setup_otel() and the
+# OTel → framework tracer. See src/troopai/adk/tracing/otel/.
+otel = [
+    "opentelemetry-api>=1.39.1",
+    "opentelemetry-sdk>=1.39.1",
+    "opentelemetry-exporter-otlp>=1.39.1",
+]
+
+# Graphviz Python bindings — renders the DOT strings produced by
+# Flow.to_dot() / Graph.to_dot() into PNG/SVG/PDF without shelling out
+# to the `dot` CLI. Optional: the emitters return pure strings even
+# without this extra. See docs/visualization/visualization.md.
+viz = ["graphviz>=0.20.2"]
+
+# Mermaid renderer — renders the Mermaid `flowchart` strings produced
+# by Flow.to_mermaid() / Graph.to_mermaid() into PNG via the Mermaid
+# Live online renderer. Optional: the emitters return pure strings
+# even without this extra. See docs/visualization/visualization.md.
+mermaid = ["mermaid-py>=0.5.0"]
+
+# Rich-backed verbose renderer (panel + line back-ends). Rich is a
+# soft-import: without this extra, ``VerboseHooks`` falls through to
+# the plain-ANSI line renderer — core agent/runner paths work either
+# way. See src/troopai/adk/verbose/.
+verbose = ["rich>=14.2.0"]
+
+# YAML config files — accept .yaml/.yml agent/topology configs in addition
+# to JSON via load_agent / load_topology. JSON stays canonical and
+# schema-published; YAML adds authoring ergonomics (block scalars, comments).
+# See src/troopai/adk/config/loader.py.
+yaml = ["pyyaml>=6.0"]
+
+# --- Built-in guardrails -------------------------------------------------
+# The built-in guardrail hub (troopai.adk.guardrails). PII + prompt-injection
+# scanning is stdlib-only; only the wrong-language check needs lingua, which it
+# imports lazily — install this extra only when that check is used.
+# See src/troopai/adk/guardrails/.
+guardrails-lingua = ["lingua-language-detector>=2.0.0"]
+# Umbrella — every optional guardrail dependency.
+guardrails = ["troopai-adk-python[guardrails-lingua]"]
+
+# --- Document search (RAG) loaders ---------------------------------------
+# DocumentSearchTool and its *SearchTool wrappers build a semantic index over
+# documents. The core (text/Markdown/CSV/JSON/directory loaders, chunker,
+# DocumentIndex) is stdlib-only; each non-stdlib loader ships as its own
+# opt-in extra and verifies its package at construction.
+# See src/troopai/adk/rag/ and src/troopai/adk/tools/builtin/document_search_tool.py.
+rag-pdf = ["pymupdf>=1.24"]
+rag-docx = ["python-docx>=1.1"]
+rag-web = ["requests>=2.31", "beautifulsoup4>=4.12"]
+rag-github = ["PyGithub>=2.1"]
+rag-youtube = ["youtube-transcript-api>=1.0", "pytube>=15.0"]
+# Umbrella — every document-search loader.
+rag = ["troopai-adk-python[rag-pdf,rag-docx,rag-web,rag-github,rag-youtube]"]
+
+# --- Sandbox backends ----------------------------------------------------
+# Each sandbox backend / hosted bridge ships as its own opt-in extra.
+# The umbrella ``sandbox`` extra carries zero dependencies — install
+# only the backends you need. See src/troopai/adk/sandbox/.
+
+# Umbrella extra (intentionally empty). Exists so docs / scripts can
+# reference ``troopai-adk-python[sandbox]`` for "any sandbox surface" without
+# pulling in heavyweight provider SDKs the user doesn't want.
+sandbox = []
+
+# Docker container backend. Wraps the synchronous ``docker`` SDK in
+# ``asyncio.to_thread``. Activates DockerSandboxClient.
+# See src/troopai/adk/sandbox/clients/docker/.
+sandbox-docker = ["docker>=7.0.0"]
+
+# Kubernetes pod backend. Uses the synchronous ``kubernetes`` client
+# + ``kubernetes.stream`` for exec / file ops over WebSocket.
+# Activates K8sPodSandboxClient.
+# See src/troopai/adk/sandbox/clients/k8s/.
+sandbox-k8s = ["kubernetes>=30.0.0"]
+
+# Intermediate base for every hosted-provider bridge (E2B, Vercel,
+# Modal, Daytona, Cloudflare, Blaxel, Runloop). Pulls in httpx for
+# the async REST client. Activates RemoteVMSandboxClient +
+# RemoteVMSandboxSession.
+# See src/troopai/adk/sandbox/clients/hosted/remote_vm/.
+sandbox-remote-vm = ["httpx>=0.27.0"]
+
+# Hosted bridges — each opt-in. They all transitively need
+# ``sandbox-remote-vm`` (httpx) so it's listed in each.
+# See src/troopai/adk/sandbox/clients/hosted/<provider>/.
+sandbox-e2b = ["troopai-adk-python[sandbox-remote-vm]"]
+sandbox-vercel = ["troopai-adk-python[sandbox-remote-vm]"]
+sandbox-modal = ["troopai-adk-python[sandbox-remote-vm]"]
+sandbox-daytona = ["troopai-adk-python[sandbox-remote-vm]"]
+sandbox-cloudflare = ["troopai-adk-python[sandbox-remote-vm]"]
+sandbox-blaxel = ["troopai-adk-python[sandbox-remote-vm]"]
+sandbox-runloop = ["troopai-adk-python[sandbox-remote-vm]"]
+
+# Snapshot stores — local is built-in. Remote stores ship with their
+# own SDK extras.
+# See src/troopai/adk/sandbox/snapshot/.
+sandbox-s3 = ["boto3>=1.34.0"]
+sandbox-gcs = ["google-cloud-storage>=2.16.0"]
+
+# Checkpointer backends — each opt-in. Install the backend you need.
+# The in-memory reference backend is built-in (no extra required).
+checkpointer-postgres = ["psycopg[binary,pool]>=3.2"]
+cost-ledger-postgres = ["psycopg[binary,pool]>=3.2"]
+memory-pgvector = ["psycopg[binary,pool]>=3.2", "pgvector>=0.3"]
+memory-chroma = ["chromadb>=0.5"]
+memory-pinecone = ["pinecone>=8.0"]
+memory-qdrant = ["qdrant-client>=1.12"]
+cost-ledger-redis = ["redis>=5.0"]
+checkpointer-redis = ["redis>=5.0"]
+checkpointer-s3 = ["boto3>=1.34.0"]
+audit-s3 = ["boto3>=1.34.0"]
+audit-postgres = ["psycopg[binary,pool]>=3.2"]
+
+# Shared Postgres backends for horizontally-scaled (multi-replica) serving:
+# a durable A2A task store and a networked session store, so background
+# tasks and conversation sessions are shared across replicas instead of
+# living in per-pod SQLite. See src/troopai/adk/a2a/postgres_task_store.py
+# and src/troopai/adk/session/postgres_multi_sessions.py.
+a2a-postgres = ["psycopg[binary,pool]>=3.2"]
+session-postgres = ["psycopg[binary,pool]>=3.2"]
+
+# Temporal durable execution engine. Wraps agent/graph/swarm/flow runs
+# as Temporal workflows with crash-recovery, retry, and deterministic
+# replay. See src/troopai/adk/workflows/temporal/.
+temporal = ["temporalio>=1.24.0"]
+
+# Restate durable execution engine. Alternative to Temporal using
+# Restate's journaling-based durable execution. See
+# src/troopai/adk/workflows/restate/.
+restate = ["restate-sdk>=0.18.0"]
+
+# Meta-extra — install every consumer-facing feature
+all = ["troopai-adk-python[anthropic,openai,voice,gemini,mcp,otel,viz,verbose,server,serve,checkpointer-postgres,cost-ledger-postgres,cost-ledger-redis,checkpointer-redis,checkpointer-s3,a2a-postgres,session-postgres,temporal,memory-pgvector,memory-chroma,memory-pinecone,memory-qdrant,rag,guardrails]"]
+
+# --- Contributor extras (not installed by default) -----------------------
+
+test = [
+    "pytest>=9.0.0,<10",
+    "pytest-asyncio>=1.0.0",
+    "pytest-cov>=7.0.0",
+    "pytest-mock>=3.14.0",
+    "pytest-timeout>=2.4.0",
+    "pytest-xdist>=3.6.0",
+    "pytest-rerunfailures>=14.0",  # CI reruns for known flaky tests (stopgap)
+    "coverage[toml]>=7.6.0",
+    "parameterized>=0.9.0",
+    "inline-snapshot>=0.20.7",
+    "fakeredis[lua]>=2.21",
+    "moto>=5.0",
+    "pytest-postgresql>=6.0",
+]
+
+dev = [
+    "troopai-adk-python[all,test]",
+    # Formatter + linter + import sorter (replaces black + isort + flake8)
+    "ruff>=0.9.2",
+    # Type checkers — mypy canonical per workflow.md §6b (pydantic.mypy
+    # plugin + --warn-unused-ignores); pyright secondary (stricter
+    # TypedDict narrowing + IDE/Pylance parity)
+    "mypy>=1.15.0",
+    "pyright>=1.1.408",
+    "types-PyYAML>=6.0",  # stubs for `import yaml` in the YAML config loader
+
+    # Quality gates
+    "pre-commit>=3.5.0",
+    "bandit[toml]>=1.7",
+    "pip-audit>=2.7",
+    # Convenience
+    "python-dotenv>=1.2.2",      # floor patches CVE-2026-28684
+    "commitizen>=4.4.0",
+    "build>=1.2.0",
+]
+
+docs = [
+    # Sphinx 9 + sphinx-autodoc-typehints 3.6+ are supported. The 9.x autodoc
+    # path would otherwise crash formatting the PEP 695 `ApprovalPolicy` alias
+    # (its body references the TYPE_CHECKING-only `ToolContext`); resolved by the
+    # `autodoc_type_aliases` mapping in docs/conf.py. Caps are next-major guards.
+    "sphinx>=8.2.3,<10",
+    "sphinx-rtd-theme",
+    "sphinx-book-theme>=1.0.1",
+    "sphinx-autodoc-typehints>=3.5,<4",
+    "sphinx-copybutton>=0.5.2",
+    "sphinx-gallery>=0.13.0",
+    "myst-parser>=1.0.0",
+    "docutils>=0.19",
+    "sphinx-design>=0.5.0",
+    "sphinxcontrib-mermaid>=0.9.0",
+    "sphinx-intl>=2.2.0",
+    "sphinx-autobuild>=2024.10.0",
+    "linkify-it-py>=2.0.0",
+]
+
+[project.scripts]
+troopai = "troopai.adk.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/troopai/troopai-adk-python"
+Repository = "https://github.com/troopai/troopai-adk-python"
+"Bug Tracker" = "https://github.com/troopai/troopai-adk-python/issues"
+Documentation = "https://github.com/troopai/troopai-adk-python/tree/main/docs"
+Changelog = "https://github.com/troopai/troopai-adk-python/releases"
+
+# -------------------------------------------------------------------------
+# Packaging
+# -------------------------------------------------------------------------
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["troopai*"]
+exclude = ["tests*", "examples*"]
+
+[tool.setuptools.package-data]
+"troopai.adk" = ["py.typed"]
+
+# -------------------------------------------------------------------------
+# Ruff — single formatter + linter (replaces black / isort / flake8)
+# -------------------------------------------------------------------------
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+include = [
+    "src/**/*.py",
+    "tests/**/*.py",
+    "examples/**/*.py",
+]
+exclude = [
+    ".git",
+    ".venv",
+    "venv",
+    "build",
+    "dist",
+    "logs",
+    ".coverage",
+]
+
+[tool.ruff.lint]
+# Rule families the codebase currently passes. The workflow.md §6b
+# hygiene gate runs `ruff check` (no explicit --select), so these rules
+# ARE the enforced set — update this list to tighten the gate.
+#
+# Still deferred:
+#   LOG  — logging subset — waiting on a separate pass
+#
+# The rules below are the production gate today.
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes — unused imports, undefined names
+    "I",   # isort — import ordering
+    "B",   # flake8-bugbear — likely bugs
+    "C4",  # flake8-comprehensions
+    "ARG", # unused arguments — §6b hygiene gate
+    "RUF", # ruff-specific
+    "G",   # logging format strings (no f-string in logger.*)
+    "UP",  # pyupgrade (excluding rules that conflict with coding-conventions.md)
+    "SIM", # simplify (collapse-if, combine-with, ternary where it reads)
+    "N",   # pep8-naming (excluding rules below)
+]
+ignore = [
+    "E501",   # line-length enforced by formatter, not linter
+    "E741",   # ambiguous variable names (single-letter generics/indices)
+    "B008",   # function-call-in-default-argument (dataclass defaults pattern)
+    "B028",   # no-explicit-stacklevel for warnings.warn
+    "B017",   # blind `pytest.raises(Exception)` — used intentionally in a few tests
+    "B027",   # empty method without abstract decorator — used for Protocol/BuiltinTool hooks
+    "B904",   # raise-without-from inside except — codebase uses re-raise idiom freely
+    "RUF001", # ambiguous unicode in strings — em-dash and en-dash are intentional style
+    "RUF002", # ambiguous unicode in docstrings
+    "RUF003", # ambiguous unicode in comments
+    "RUF009", # function-call in dataclass default — used for field defaults in Agent/etc.
+    "RUF012", # mutable class default — used deliberately for dataclass defaults
+    "RUF043", # pytest-raises ambiguous pattern — test assertions are explicit enough
+    # --- UP rule ignores — see .claude/rules/project/coding-conventions.md ---
+    # coding-conventions.md mandates `Optional[T]` and `Union[A, B]` — both
+    # PEP 604 rewrites would violate that convention.
+    "UP007", # typing-union — `Union[A, B]` → `A | B`
+    "UP045", # non-pep604-annotation-optional — `Optional[T]` → `T | None`
+    # UP046 rewrites `class Foo(Generic[T])` to PEP 695 `class Foo[T]`. Our
+    # `@dataclass(frozen=True)` classes depend on TypeVar identity tracked
+    # via `Generic[...]`; rewriting is a cross-cutting refactor.
+    "UP046",
+    # --- N rule ignores ---
+    # N818 requires an `Error` suffix on all Exception class names, but
+    # several of our public exceptions (GuardrailTripwireTriggered,
+    # MaxTurnsExceeded, QuotaExceeded, UsageLimitExceeded, ToolRetry,
+    # AgentToolDeferral, InterruptException) are deliberate — the names
+    # read as state predicates, not error classes, and are public API.
+    # Renaming is breaking and unrelated to hygiene.
+    "N818",
+    # E402 (module-import-not-at-top) is intentional in several ADK files:
+    # - src/troopai/adk/__init__.py: _configure_logging() must run before
+    #   submodule imports so they pick up handler config.
+    # - handoffs/handoff.py, llms/litellm/litellm_model.py: logger declared
+    #   before downstream imports placed late to break circular cycles.
+    # - types/input/__init__.py: PEP 695 `type X = ...` aliases interleave
+    #   with imports for the same reason.
+    # All locations are reviewed; bandit-style global skip is intentional.
+    "E402",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]          # re-exports are the point
+"tests/**/*.py" = ["ARG"]         # test fixtures often have unused params
+# Didactic code (examples) gets looser rules: f-strings in logging read
+# better for teaching, unused ARG is common in decorator demos, and line
+# length / naming gates are waived for clarity.
+"examples/**/*.py" = ["E501", "N", "G", "ARG"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["troopai"]
+combine-as-imports = true
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.format]
+docstring-code-format = true
+
+# -------------------------------------------------------------------------
+# Type checkers.
+#
+# Mypy (CANONICAL, workflow.md §6b) is configured below. It runs first
+# in the hygiene gate because the `pydantic.mypy` plugin catches
+# validator signatures and field defaults pyright structurally cannot
+# see, and `--warn-unused-ignores` is the tool that identifies stale
+# `# type: ignore` markers (see no-type-ignore-markers.md).
+#
+# Pyright (SECONDARY) is configured in `pyrightconfig.json` at the repo
+# root — pyright prefers that file over `[tool.pyright]` and it matches
+# the auto-discovery convention used by IDEs (Pylance / JetBrains).
+#
+# Strictness is CALIBRATED to what the codebase passes today. Stricter
+# flags (disallow_untyped_defs, strict=true) are the goal but need a
+# focused cleanup pass. Raising strictness means editing this block;
+# the hygiene gate automatically reflects the change.
+# -------------------------------------------------------------------------
+
+[tool.mypy]
+python_version = "3.12"
+# src-layout: mypy must know where the package root lives, otherwise it
+# walks up from `src/troopai/adk/` and resolves the same files under two
+# module paths ("adk.*" vs "troopai.adk.*"). `mypy_path` + namespace
+# settings anchor resolution at `src/`.
+mypy_path = "src"
+namespace_packages = true
+explicit_package_bases = true
+plugins = ["pydantic.mypy"]
+check_untyped_defs = true
+warn_return_any = true
+warn_unused_configs = true
+warn_unused_ignores = false
+warn_redundant_casts = true
+warn_unreachable = true
+no_implicit_optional = true
+no_implicit_reexport = false
+show_error_codes = true
+show_column_numbers = true
+exclude = [
+    "build/",
+    "dist/",
+    "venv/",
+    ".venv/",
+    "examples/",
+]
+
+# Third-party libraries without stubs — silence per-module so we don't
+# mask real ImportError in first-party code.
+[[tool.mypy.overrides]]
+module = ["litellm", "litellm.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["griffe.*"]
+ignore_missing_imports = true
+
+# graphviz + mermaid are optional render-time deps imported lazily from
+# src/troopai/adk/visualization/render.py — neither ships type stubs;
+# silence the missing-stub warning per-module.
+[[tool.mypy.overrides]]
+module = ["graphviz", "mermaid"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["mcp.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["anthropic.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["opentelemetry.*"]
+ignore_missing_imports = true
+
+# boto3 / botocore ship no type stubs; used by the optional S3 checkpointers
+# (checkpointer-s3 extra) and the sandbox S3 snapshot store.
+[[tool.mypy.overrides]]
+module = ["boto3.*", "botocore.*"]
+ignore_missing_imports = true
+
+# pgvector ships no type stubs; used by the optional PgVectorStore backend
+# (memory-pgvector extra). Silenced per-module so first-party ImportError
+# in stores/pgvector.py is not masked.
+[[tool.mypy.overrides]]
+module = ["pgvector.*"]
+ignore_missing_imports = true
+
+# kubernetes ships no type stubs or py.typed marker; used by the optional
+# K8sSandboxClient (sandbox-k8s extra), imported lazily with a runtime
+# install hint.
+[[tool.mypy.overrides]]
+module = ["kubernetes", "kubernetes.*"]
+ignore_missing_imports = true
+
+# pytube ships no type stubs or py.typed marker; optional dep imported lazily
+# by YoutubeChannelLoader (rag-youtube extra) to enumerate a channel's uploads.
+[[tool.mypy.overrides]]
+module = ["pytube.*"]
+ignore_missing_imports = true
+
+# -------------------------------------------------------------------------
+# ignore_errors ratchet — fully drained 2026-04-21
+#
+# Historical context: between 2026-04-18 (baseline: 306 mypy-strict errors)
+# and 2026-04-21 the per-module ignore_errors list was drained one entry
+# at a time through a graduation protocol.
+# The list is now empty — every module under src/troopai/adk/ is checked
+# by mypy with no module-level opt-outs.
+#
+# If a new module needs to be temporarily silenced (strongly discouraged),
+# add it here with a corresponding dated todo.md entry and graduation plan.
+# -------------------------------------------------------------------------
+
+# -------------------------------------------------------------------------
+# Pytest
+# -------------------------------------------------------------------------
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "."]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "--tb=short",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: multi-module integration tests",
+    "postgres: tests requiring live PostgreSQL or pgvector infrastructure",
+    "e2e: full-pipeline smoke tests",
+    "allow_call_model_methods: tests that call real LLM implementations",
+    "serial: tests that must run serially",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning:pydantic._internal.*",
+    "ignore::DeprecationWarning:litellm.*",
+]
+xfail_strict = true
+
+# -------------------------------------------------------------------------
+# Coverage
+# -------------------------------------------------------------------------
+
+[tool.coverage.run]
+branch = true
+source = ["src/troopai"]
+data_file = ".coverage/.coverage"
+omit = [
+    "*/tests/*",
+    "*/__init__.py",
+]
+parallel = true
+concurrency = ["thread", "multiprocessing"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+skip_empty = true
+precision = 2
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "@overload",
+    "@abstractmethod",
+    "class .*\\bProtocol\\):",
+    "logger.debug",
+]
+# Start permissive; raise as the suite matures.
+fail_under = 50
+
+[tool.coverage.html]
+directory = ".coverage/html"
+
+[tool.coverage.xml]
+output = ".coverage/coverage.xml"
+
+# -------------------------------------------------------------------------
+# Security & supply-chain
+# -------------------------------------------------------------------------
+
+[tool.bandit]
+exclude_dirs = [
+    "tests",
+    "scripts",
+    "docs",
+    "build",
+    "dist",
+    "examples",
+]
+skips = [
+    "B101", # assert used — valid contract check in framework code
+]
+
+# -------------------------------------------------------------------------
+# Commitizen — matches the Conventional Commits style already in git log.
+# -------------------------------------------------------------------------
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+# Read the current version from [project].version (single source of truth);
+# version_files lists the additional copies to keep in lockstep on bump.
+version_provider = "pep621"
+tag_format = "v$version"
+version_files = [
+    "src/troopai/adk/__init__.py:__version__",
+]
+bump_message = "chore(release): bump version $current_version -> $new_version"
+# The changelog is hand-maintained in Keep a Changelog format (see
+# CHANGELOG.md): releases fold the [Unreleased] section into a dated
+# heading by hand, so commitizen must not regenerate it from commits.
+update_changelog_on_bump = false

@@ -1,0 +1,69 @@
+name: Security
+
+# Supply-chain (pip-audit) + static (bandit) scans. Both are plain CLI tools,
+# so they run on a private repo without GitHub Advanced Security. CodeQL —
+# which DOES require GHAS on a private repo — lives in codeql.yml.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - "pyproject.toml"
+      - "src/**"
+      - ".github/workflows/security.yml"
+  schedule:
+    - cron: "0 6 * * 1" # weekly, Monday 06:00 UTC
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pip-audit:
+    name: Dependency CVE scan (pip-audit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: pip install "pip-audit>=2.7"
+      # Temporary ignores with explicit ownership and removal criteria.
+      # CVE-2026-40217 owner: platform. CVE-2026-40217 removal: remove when
+      # the audited dependency graph has a compatible fixed release for
+      # Python >=3.12,<3.14 or the affected dependency is no longer present.
+      # CVE-2026-28684 owner: platform. CVE-2026-28684 removal: remove when
+      # the audited dependency graph has a compatible fixed release for
+      # Python >=3.12,<3.14 or the affected dependency is no longer present.
+      - run: >-
+          pip-audit
+          --progress-spinner=off
+          --ignore-vuln CVE-2026-40217
+          --ignore-vuln CVE-2026-28684
+          .
+
+  bandit:
+    name: Static security scan (bandit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: pip install "bandit[toml]>=1.7"
+      # Non-blocking until the pre-existing findings are triaged (tracked issue):
+      # mostly framework subprocess / random / tmp-path patterns (sandbox/, rag/)
+      # plus safe parameterized SQL. The scan still runs and reports on every
+      # run; flip to blocking once the findings are reviewed/suppressed.
+      # Config (exclude_dirs, skip B101) lives in [tool.bandit] in pyproject.
+      - name: bandit (non-blocking, pending triage)
+        continue-on-error: true
+        run: bandit -c pyproject.toml -r src

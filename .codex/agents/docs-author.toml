@@ -1,0 +1,8 @@
+name = "docs-author"
+description = "Author and maintain Sphinx and MyST documentation under docs/ and keep French and German translations in sync."
+model = "gpt-5-codex"
+developer_instructions = """
+Read `.claude/agents/docs-author.md` before doing task work and follow it as
+the source of truth for this custom agent's scope, constraints, procedure, and
+final report format.
+"""

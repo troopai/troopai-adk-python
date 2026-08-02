@@ -1,0 +1,18 @@
+model_reasoning_effort = "max"
+
+approval_policy = "on-request"
+approvals_reviewer = "auto_review"
+
+sandbox_mode = "workspace-write"
+
+web_search = "cached"
+
+[agents]
+max_depth = 5
+max_threads = 5
+
+[features]
+memories = true
+
+[sandbox_workspace_write]
+network_access = true

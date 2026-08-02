@@ -1,0 +1,28 @@
+{
+  "pythonVersion": "3.12",
+  "include": ["src", "tests", "examples", "cookbook", "evals"],
+  "extraPaths": ["src", "."],
+  "exclude": [
+    "**/__pycache__",
+    "**/node_modules",
+    ".git",
+    "build",
+    "dist",
+    ".venv",
+    "venv",
+    ".coverage"
+  ],
+  "typeCheckingMode": "basic",
+  "useLibraryCodeForTypes": true,
+  "reportMissingImports": "error",
+  "reportMissingTypeStubs": false,
+  "reportImplicitOverride": "warning",
+  "reportUnusedImport": "warning",
+  "reportUnusedVariable": "warning",
+  "reportDuplicateImport": "error",
+  "reportPrivateImportUsage": "error",
+  "reportInvalidTypeVarUse": "error",
+  "strictListInference": true,
+  "strictDictionaryInference": true,
+  "strictSetInference": true
+}

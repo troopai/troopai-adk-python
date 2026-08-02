@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img"
+     aria-label="The undecidable halting region — programs whose halting cannot be decided in general."
+     class="themed">
+  <defs>
+    <style>
+      .frame    { fill: var(--svg-fill, #eef2f8); stroke: var(--svg-stroke, #1c1e21); stroke-width: 1.5; }
+      .label    { font-family: 'Inter', 'Helvetica', sans-serif; fill: var(--svg-text, #1c1e21); font-size: 14px; }
+      .axis     { stroke: var(--svg-stroke, #1c1e21); stroke-width: 1.5; fill: none; }
+      .halt     { fill: #c8e6c9; stroke: #2e7d32; stroke-width: 1.5; }
+      .loop     { fill: #ffcdd2; stroke: #c62828; stroke-width: 1.5; }
+      .undec    { fill: url(#stripe); stroke: #b71c1c; stroke-width: 2; stroke-dasharray: 8 4; }
+      .title    { font-family: 'Inter', 'Helvetica', sans-serif; fill: var(--svg-text, #1c1e21); font-size: 16px; font-weight: 600; }
+      .small    { font-family: 'Inter', 'Helvetica', sans-serif; fill: var(--svg-text, #1c1e21); font-size: 12px; }
+    </style>
+    <pattern id="stripe" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">
+      <rect width="10" height="10" fill="#fff5f5"/>
+      <line x1="0" y1="0" x2="0" y2="10" stroke="#b71c1c" stroke-width="2"/>
+    </pattern>
+  </defs>
+  <rect class="frame" x="10" y="10" width="620" height="340" rx="8"/>
+  <text class="title" x="320" y="36" text-anchor="middle">The Halting Region</text>
+  <text class="small" x="320" y="54" text-anchor="middle">All programs partition into halts / loops / undecidable from outside.</text>
+  <!-- big outer circle: all programs -->
+  <circle cx="320" cy="200" r="130" class="undec"/>
+  <text class="label" x="320" y="180" text-anchor="middle">undecidable in general</text>
+  <text class="small" x="320" y="200" text-anchor="middle">(Rice + Halting region)</text>
+  <!-- halts subset -->
+  <circle cx="245" cy="220" r="55" class="halt"/>
+  <text class="small" x="245" y="225" text-anchor="middle">halts ✓</text>
+  <!-- loops subset -->
+  <circle cx="395" cy="220" r="55" class="loop"/>
+  <text class="small" x="395" y="225" text-anchor="middle">loops ✗</text>
+  <!-- max_turns guard arrow -->
+  <line x1="40" y1="320" x2="600" y2="320" class="axis"/>
+  <text class="label" x="50" y="340">runtime →</text>
+  <line x1="495" y1="305" x2="495" y2="335" class="axis" stroke-dasharray="4 2"/>
+  <text class="small" x="500" y="345">max_turns guard cuts the loop</text>
+</svg>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 400" role="img"
+     aria-label="Three theorems mapped to three engineering responses in the ADK."
+     class="themed">
+  <defs>
+    <style>
+      .frame    { fill: var(--svg-fill, #eef2f8); stroke: var(--svg-stroke, #1c1e21); stroke-width: 1.5; }
+      .pill     { rx: 18; ry: 18; }
+      .pill-h   { fill: #ffcdd2; stroke: #c62828; stroke-width: 1.5; }
+      .pill-r   { fill: #ffe0b2; stroke: #ef6c00; stroke-width: 1.5; }
+      .pill-n   { fill: #c8e6c9; stroke: #2e7d32; stroke-width: 1.5; }
+      .pill-e   { fill: #e3f2fd; stroke: #1565c0; stroke-width: 1.5; }
+      .arrow    { stroke: var(--svg-stroke, #1c1e21); stroke-width: 1.8; fill: none; marker-end: url(#tri); }
+      .label    { font-family: 'Inter', sans-serif; fill: var(--svg-text, #1c1e21); font-size: 14px; font-weight: 600; }
+      .small    { font-family: 'Inter', sans-serif; fill: var(--svg-text, #1c1e21); font-size: 12px; }
+      .title    { font-family: 'Inter', sans-serif; fill: var(--svg-text, #1c1e21); font-size: 17px; font-weight: 700; }
+    </style>
+    <marker id="tri" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--svg-stroke, #1c1e21)"/>
+    </marker>
+  </defs>
+  <rect class="frame" x="10" y="10" width="700" height="380" rx="10"/>
+  <text class="title" x="360" y="38" text-anchor="middle">Three Limits → Three Engineering Responses</text>
+
+  <!-- theorems (left column) -->
+  <rect x="50" y="80" width="200" height="60" class="pill pill-h"/>
+  <text class="label" x="150" y="110" text-anchor="middle">⏱️ Halting Problem</text>
+  <text class="small" x="150" y="128" text-anchor="middle">Turing 1936</text>
+
+  <rect x="50" y="170" width="200" height="60" class="pill pill-r"/>
+  <text class="label" x="150" y="200" text-anchor="middle">🧮 Rice's Theorem</text>
+  <text class="small" x="150" y="218" text-anchor="middle">Rice 1953</text>
+
+  <rect x="50" y="260" width="200" height="60" class="pill pill-n"/>
+  <text class="label" x="150" y="290" text-anchor="middle">🍱 No Free Lunch</text>
+  <text class="small" x="150" y="308" text-anchor="middle">Wolpert &amp; Macready 1997</text>
+
+  <!-- responses (right column) -->
+  <rect x="460" y="80" width="220" height="60" class="pill pill-e"/>
+  <text class="label" x="570" y="110" text-anchor="middle">bounded loops</text>
+  <text class="small" x="570" y="128" text-anchor="middle">max_turns, budgets, retries</text>
+
+  <rect x="460" y="170" width="220" height="60" class="pill pill-e"/>
+  <text class="label" x="570" y="200" text-anchor="middle">empirical evals</text>
+  <text class="small" x="570" y="218" text-anchor="middle">graders over verification</text>
+
+  <rect x="460" y="260" width="220" height="60" class="pill pill-e"/>
+  <text class="label" x="570" y="290" text-anchor="middle">specialised composition</text>
+  <text class="small" x="570" y="308" text-anchor="middle">handoffs, swarms, graphs, skills</text>
+
+  <!-- arrows -->
+  <line x1="255" y1="110" x2="455" y2="110" class="arrow"/>
+  <line x1="255" y1="200" x2="455" y2="200" class="arrow"/>
+  <line x1="255" y1="290" x2="455" y2="290" class="arrow"/>
+
+  <!-- footer -->
+  <text class="small" x="360" y="370" text-anchor="middle">Each engineering response is concrete code in the ADK, not philosophy.</text>
+</svg>

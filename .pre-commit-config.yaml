@@ -1,0 +1,144 @@
+# Pre-commit hook chain for TroopAI ADK.
+#
+# Two-tier gate designed to keep `git commit` fast. The authoritative
+# quality gate is workflow.md §6b (ruff + mypy + pyright + pytest);
+# this file is a **safety net** layered on top of the inner loop.
+#
+#   pre-commit (runs on `git commit`, ~1s):
+#     - pre-commit-hooks safety  -> whitespace, EOF, YAML/TOML/JSON
+#                                   syntax, merge-conflict markers,
+#                                   private-key leak, >1 MB files.
+#     - ruff-format              -> formatter (line-length 120, config
+#                                   in [tool.ruff.format]).
+#     - ruff check --fix         -> imports + lint rules from
+#                                   [tool.ruff.lint] in pyproject.toml.
+#
+#   manual (opt-in via `pre-commit run --hook-stage manual <id>`):
+#     - mypy      -> canonical type check per workflow.md §6b. Runs
+#                    in the developer venv so the pydantic.mypy
+#                    plugin and the full first-party import graph
+#                    are available.
+#     - pip-audit -> CVE scan over the resolved install closure.
+#                    Bandit (static) cannot see supply-chain CVEs;
+#                    this hook closes that gap. Auto-runs on the
+#                    pre-commit stage when pyproject.toml changes.
+#
+# Pytest and sphinx are intentionally NOT wired here — the §6b
+# hygiene gate owns test invocation and docs build cadence.
+#
+# Bootstrap locally:
+#
+#     pip install -e .[dev]             # brings pre-commit + ruff + mypy
+#     pre-commit install                 # wire the pre-commit stage
+#
+# Run manually without committing:
+#
+#     pre-commit run --all-files                             # fast tier
+#     pre-commit run --hook-stage manual mypy --all-files    # canonical type check
+#     pre-commit run --hook-stage manual pip-audit           # CVE sweep
+#
+# See .claude/rules/workflow/workflow.md §6b for the hygiene gate and
+# §6c for the review-agent pipeline.
+
+default_language_version:
+  python: python3.12
+
+# Never skip hooks by default. Bulk-rewrite or vendor-merge commits
+# that need SKIP=... must document the reason in the commit message.
+fail_fast: false
+
+repos:
+  # -------------------------------------------------------------------
+  # Safety net: catch the class of mistakes a type checker will never
+  # see. detect-private-key is the single most important hook here —
+  # it fires before an SSH / API key ever leaves the machine.
+  # -------------------------------------------------------------------
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: end-of-file-fixer
+      - id: check-yaml
+        # configs/logging/*.yaml and similar use custom tags in places;
+        # --unsafe keeps the hook from rejecting them.
+        args: [--unsafe]
+      - id: check-toml
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-symlinks
+      - id: detect-private-key
+      - id: check-added-large-files
+        # 1 MB ceiling. No intentional large fixtures live in this repo;
+        # logs/ and .coverage/ are .gitignored, so the ceiling will only
+        # fire on something genuinely unexpected.
+        args: [--maxkb=1024]
+
+  # -------------------------------------------------------------------
+  # Ruff pin aligned with the installed dev version; bump alongside
+  # `ruff>=0.9.2` in pyproject.toml whenever the rule set changes so
+  # local / CI / hook stay in lockstep.
+  # -------------------------------------------------------------------
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.7
+    hooks:
+      - id: ruff-format
+        types_or: [python, pyi]
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+        types_or: [python, pyi]
+
+  # -------------------------------------------------------------------
+  # mypy — canonical per workflow.md §6b. Manual stage only because:
+  #   1. It takes 30+ seconds on a warm cache and would turn `git
+  #      commit` into a coffee break.
+  #   2. It needs the project venv (pydantic.mypy plugin, plus the
+  #      litellm / mcp / anthropic / opentelemetry import graph). An
+  #      isolated pre-commit venv would require brittle
+  #      `additional_dependencies` pins that rot on every bump —
+  #      `language: system` runs the dev venv's mypy directly instead.
+  # Intended invocation: `pre-commit run --hook-stage manual mypy`.
+  # CI runs this the same way.
+  # -------------------------------------------------------------------
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy (canonical type check, workflow.md §6b)
+        entry: mypy -p troopai.adk
+        language: system
+        pass_filenames: false
+        stages: [manual]
+        types: [python]
+
+  # -------------------------------------------------------------------
+  # Supply-chain audit — complements bandit (which sees source, not
+  # the install closure). Gated on pyproject.toml changes so day-to-day
+  # source edits stay fast; run a full sweep manually via
+  # `pre-commit run --hook-stage manual pip-audit`. Floor `>=2.7`
+  # matches the [dev] extra in pyproject.toml.
+  # -------------------------------------------------------------------
+  - repo: https://github.com/pypa/pip-audit
+    rev: v2.7.3
+    hooks:
+      - id: pip-audit
+        name: pip-audit (CVE scan over install closure)
+        # `--disable-pip` requires `--requirement` in pip-audit 2.10+;
+        # the previous combination broke with "The --disable-pip flag
+        # can only be used with --requirement (-r)". Auditing the
+        # project directory directly works across versions.
+        #
+        # Temporary ignores with explicit ownership and removal criteria.
+        # CVE-2026-40217 owner: platform. CVE-2026-40217 removal: remove
+        # when the audited dependency graph has a compatible fixed release
+        # for Python >=3.12,<3.14 or the affected dependency is absent.
+        # CVE-2026-28684 owner: platform. CVE-2026-28684 removal: remove
+        # when the audited dependency graph has a compatible fixed release
+        # for Python >=3.12,<3.14 or the affected dependency is absent.
+        args:
+          - "--progress-spinner=off"
+          - "--ignore-vuln=CVE-2026-40217"
+          - "--ignore-vuln=CVE-2026-28684"
+          - "."
+        files: ^pyproject\.toml$
+        pass_filenames: false

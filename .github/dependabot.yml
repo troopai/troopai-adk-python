@@ -1,0 +1,25 @@
+version: 2
+updates:
+  # Keep GitHub Actions pinned and current. Grouped into one PR per run so
+  # action bumps don't fan out into noise.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    labels: ["dependencies", "ci"]
+    groups:
+      github-actions:
+        patterns: ["*"]
+
+  # Python dependencies declared in pyproject.toml. Security updates are
+  # delivered out-of-band by Dependabot alerts regardless of this cadence.
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    labels: ["dependencies", "python"]
+    groups:
+      python-dev:
+        patterns: ["*"]

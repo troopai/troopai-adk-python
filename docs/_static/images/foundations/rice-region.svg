@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img"
+     aria-label="Rice's region — non-trivial semantic properties are undecidable; trivial syntactic properties remain decidable."
+     class="themed">
+  <defs>
+    <style>
+      .frame    { fill: var(--svg-fill, #eef2f8); stroke: var(--svg-stroke, #1c1e21); stroke-width: 1.5; }
+      .label    { font-family: 'Inter', sans-serif; fill: var(--svg-text, #1c1e21); font-size: 14px; }
+      .axis     { stroke: var(--svg-stroke, #1c1e21); stroke-width: 1.5; fill: none; }
+      .dec      { fill: #c8e6c9; stroke: #2e7d32; stroke-width: 1.5; }
+      .undec    { fill: url(#stripeR); stroke: #b71c1c; stroke-width: 2; }
+      .title    { font-family: 'Inter', sans-serif; fill: var(--svg-text, #1c1e21); font-size: 16px; font-weight: 600; }
+      .small    { font-family: 'Inter', sans-serif; fill: var(--svg-text, #1c1e21); font-size: 12px; }
+    </style>
+    <pattern id="stripeR" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(-45)">
+      <rect width="10" height="10" fill="#fff5f5"/>
+      <line x1="0" y1="0" x2="0" y2="10" stroke="#b71c1c" stroke-width="2"/>
+    </pattern>
+  </defs>
+  <rect class="frame" x="10" y="10" width="620" height="340" rx="8"/>
+  <text class="title" x="320" y="36" text-anchor="middle">Rice's Region</text>
+  <text class="small" x="320" y="54" text-anchor="middle">Every non-trivial semantic property of programs is undecidable.</text>
+  <!-- axis: properties from syntactic to semantic -->
+  <line x1="60" y1="290" x2="580" y2="290" class="axis"/>
+  <text class="small" x="60" y="310">syntactic</text>
+  <text class="small" x="580" y="310" text-anchor="end">semantic</text>
+  <!-- decidable region -->
+  <rect class="dec" x="60" y="100" width="220" height="170" rx="12"/>
+  <text class="label" x="170" y="190" text-anchor="middle">decidable</text>
+  <text class="small" x="170" y="210" text-anchor="middle">e.g. "uses ≤ 100 LOC"</text>
+  <text class="small" x="170" y="226" text-anchor="middle">"contains a return"</text>
+  <!-- undecidable region -->
+  <rect class="undec" x="320" y="100" width="260" height="170" rx="12"/>
+  <text class="label" x="450" y="190" text-anchor="middle">undecidable (Rice)</text>
+  <text class="small" x="450" y="210" text-anchor="middle">e.g. "computes sort()"</text>
+  <text class="small" x="450" y="226" text-anchor="middle">"is safe", "halts on x"</text>
+  <!-- arrow: empirical evals -->
+  <line x1="450" y1="270" x2="450" y2="320" class="axis" stroke-dasharray="4 2"/>
+  <text class="small" x="450" y="335" text-anchor="middle">substitute: empirical evals</text>
+</svg>

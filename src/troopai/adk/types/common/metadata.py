@@ -1,0 +1,21 @@
+from __future__ import annotations
+
+from typing_extensions import TypedDict
+
+__all__ = ["Metadata"]
+
+
+class Metadata(TypedDict, total=False):
+    """Metadata for LLM requests.
+
+    Used to pass context like user identifiers to providers for abuse
+    monitoring or logging.
+    """
+
+    user_id: str | None
+    """An external identifier for the user who is associated with the request.
+
+    This should be a uuid, hash value, or other opaque identifier. Anthropic may use
+    this id to help detect abuse. Do not include any identifying information such as
+    name, email address, or phone number.
+    """

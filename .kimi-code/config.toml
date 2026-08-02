@@ -1,0 +1,47 @@
+# Project Kimi Code configuration (template).
+#
+# NOTE: Kimi Code reads a single user-level config file
+# (~/.kimi-code/config.toml or $KIMI_CODE_HOME/config.toml) and has no
+# project-level config file mechanism. This file is the committed,
+# project-scoped configuration: model, thinking effort, and hooks. To
+# activate it, launch with a project-isolated data root:
+#
+#   KIMI_CODE_HOME="$PWD/.kimi-code" kimi
+#
+# Project-local machine-specific settings live in .kimi-code/local.toml
+# (gitignored).
+
+default_model = "kimi-code/k3"
+
+[providers."managed:kimi-code"]
+type = "kimi"
+base_url = "https://api.kimi.com/coding/v1"
+api_key = ""
+
+[models."kimi-code/k3"]
+provider = "managed:kimi-code"
+model = "k3"
+max_context_size = 1048576
+capabilities = [ "thinking", "always_thinking", "image_in", "video_in", "tool_use" ]
+display_name = "K3"
+support_efforts = [ "low", "high", "max" ]
+default_effort = "max"
+
+[thinking]
+enabled = true
+effort = "max"
+keep = "all"
+
+# Project-scoped hooks (active only when this file is the config via
+# KIMI_CODE_HOME). Hook commands run with the project directory as cwd.
+# tools/kimi_hooks.py is advisory only: exit 0, plain stdout, never blocks.
+[[hooks]]
+event = "Stop"
+command = "python3 -m tools.kimi_hooks stop"
+timeout = 60
+
+[[hooks]]
+event = "SubagentStop"
+command = "python3 -m tools.kimi_hooks subagent-stop"
+timeout = 60
+

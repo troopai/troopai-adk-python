@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 360" role="img"
+     aria-label="Three type layers — Layer 1 LLMInputContentItem, Layer 2 ChatCompletion wire, Layer 3 RunItem."
+     class="themed">
+  <defs>
+    <style>
+      .frame { fill: var(--svg-fill, #eef2f8); stroke: var(--svg-stroke, #1c1e21); stroke-width: 1.5; }
+      .layer1 { fill: #c8e6c9; stroke: #2e7d32; stroke-width: 1.5; rx: 12; ry: 12; }
+      .layer2 { fill: #ffe0b2; stroke: #ef6c00; stroke-width: 1.5; rx: 12; ry: 12; }
+      .layer3 { fill: #bbdefb; stroke: #1565c0; stroke-width: 1.5; rx: 12; ry: 12; }
+      .label { font-family: 'Inter', sans-serif; fill: var(--svg-text, #1c1e21); font-size: 14px; font-weight: 600; }
+      .small { font-family: 'Inter', sans-serif; fill: var(--svg-text, #1c1e21); font-size: 12px; }
+      .title { font-family: 'Inter', sans-serif; fill: var(--svg-text, #1c1e21); font-size: 17px; font-weight: 700; }
+      .arrow { stroke: var(--svg-stroke, #1c1e21); stroke-width: 1.8; fill: none; marker-end: url(#tri2); }
+      .arrowback { stroke: var(--svg-stroke, #1c1e21); stroke-width: 1.8; fill: none; marker-end: url(#tri2); stroke-dasharray: 6 4; }
+      .module { fill: none; stroke: var(--svg-stroke, #1c1e21); stroke-width: 1.5; stroke-dasharray: 5 3; rx: 16; ry: 16; }
+    </style>
+    <marker id="tri2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--svg-stroke, #1c1e21)"/>
+    </marker>
+  </defs>
+  <rect class="frame" x="10" y="10" width="780" height="340" rx="10"/>
+  <text class="title" x="400" y="38" text-anchor="middle">Three type layers — one conversion per direction</text>
+
+  <!-- Developer side -->
+  <rect class="layer1" x="30" y="120" width="170" height="50"/>
+  <text class="label" x="115" y="150" text-anchor="middle">Layer 1</text>
+  <text class="small" x="115" y="166" text-anchor="middle">LLMInputContentItem</text>
+
+  <rect class="layer3" x="30" y="200" width="170" height="50"/>
+  <text class="label" x="115" y="230" text-anchor="middle">Layer 3</text>
+  <text class="small" x="115" y="246" text-anchor="middle">RunItem</text>
+
+  <text class="small" x="115" y="290" text-anchor="middle">developer-facing</text>
+
+  <!-- Provider module -->
+  <rect class="module" x="290" y="80" width="340" height="220"/>
+  <text class="small" x="460" y="100" text-anchor="middle">src/troopai/adk/llms/&lt;provider&gt;/</text>
+
+  <rect class="layer2" x="320" y="120" width="280" height="50"/>
+  <text class="label" x="460" y="150" text-anchor="middle">Layer 2 (wire)</text>
+  <text class="small" x="460" y="166" text-anchor="middle">ChatCompletion* TypedDicts — provider-local</text>
+
+  <rect class="layer2" x="320" y="200" width="280" height="50"/>
+  <text class="label" x="460" y="230" text-anchor="middle">Layer 2 (wire response)</text>
+  <text class="small" x="460" y="246" text-anchor="middle">provider response shape</text>
+
+  <!-- Provider HTTP -->
+  <rect class="layer1" x="660" y="160" width="130" height="50" fill="#fff" stroke="#888"/>
+  <text class="label" x="725" y="190" text-anchor="middle">provider API</text>
+
+  <!-- Arrows -->
+  <line x1="200" y1="145" x2="318" y2="145" class="arrow"/>
+  <text class="small" x="259" y="135" text-anchor="middle">convert (provider)</text>
+
+  <line x1="600" y1="145" x2="660" y2="180" class="arrow"/>
+  <line x1="660" y1="195" x2="600" y2="225" class="arrowback"/>
+
+  <line x1="318" y1="225" x2="200" y2="225" class="arrowback"/>
+  <text class="small" x="259" y="215" text-anchor="middle">convert (provider)</text>
+</svg>

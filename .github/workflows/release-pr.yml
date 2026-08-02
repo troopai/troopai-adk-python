@@ -1,0 +1,70 @@
+name: Release — open PR
+
+# Step 1 of the release flow (see RELEASING.md). A maintainer triggers this
+# and picks the SemVer increment; commitizen rewrites both version locations
+# (pyproject.toml + src/troopai/adk/__init__.py) and folds the CHANGELOG
+# [Unreleased] section into a dated heading, then this opens a release PR.
+# Merging that PR fires release-tag.yml. Nothing is published to PyPI.
+
+on:
+  workflow_dispatch:
+    inputs:
+      increment:
+        description: SemVer increment
+        required: true
+        type: choice
+        options: [patch, minor, major]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  open-release-pr:
+    name: Bump + open release PR
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # commitizen needs full history + tags
+          ref: main
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install "commitizen>=4.4.0"
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Bump version + changelog (files only, no commit/tag)
+        id: bump
+        run: |
+          cz bump --yes --files-only --increment "${{ inputs.increment }}"
+          echo "version=$(cz version --project)" >> "$GITHUB_OUTPUT"
+      - name: Create release branch + PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${{ steps.bump.outputs.version }}"
+          branch="release/v${version}"
+          git switch -c "$branch"
+          git add -A
+          git commit -m "chore(release): v${version}"
+          git push --set-upstream origin "$branch"
+          body=$(cat <<EOF
+          Automated release PR for **v${version}**.
+
+          - Version bumped in \`pyproject.toml\` and \`src/troopai/adk/__init__.py\`.
+          - \`CHANGELOG.md\` \`[Unreleased]\` folded into the dated heading.
+
+          Review the version and changelog, confirm CI is green, then **merge as a merge commit**.
+          Merging tags \`v${version}\` and creates the GitHub Release with the built wheel + sdist attached.
+          EOF
+          )
+          gh pr create --base main --head "$branch" \
+            --title "chore(release): v${version}" \
+            --label release \
+            --body "$body" \
+          || gh pr create --base main --head "$branch" \
+            --title "chore(release): v${version}" \
+            --body "$body"

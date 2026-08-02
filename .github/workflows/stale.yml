@@ -1,0 +1,34 @@
+name: Stale issues & PRs
+
+# Nudges and closes inactive issues / PRs. Tune the windows or delete this
+# workflow if a small private collaborator set makes it unnecessary.
+
+on:
+  schedule:
+    - cron: "30 1 * * *" # daily, 01:30 UTC
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v10
+        with:
+          days-before-issue-stale: 30
+          days-before-issue-close: 14
+          days-before-pr-stale: 21
+          days-before-pr-close: 14
+          stale-issue-label: stale
+          stale-pr-label: stale
+          exempt-issue-labels: "pinned,security,blocked"
+          exempt-pr-labels: "pinned,blocked"
+          stale-issue-message: >-
+            This issue has been inactive for a while and will be closed if there
+            is no further activity. Comment to keep it open.
+          stale-pr-message: >-
+            This PR has been inactive for a while and will be closed if there is
+            no further activity. Comment or push to keep it open.

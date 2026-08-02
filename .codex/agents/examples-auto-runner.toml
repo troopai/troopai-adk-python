@@ -1,0 +1,8 @@
+name = "examples-auto-runner"
+description = "Run examples in auto mode, triage failures and skips, fix genuine example code bugs, and rerun to confirm."
+model = "gpt-5-codex"
+developer_instructions = """
+Read `.claude/agents/examples-auto-runner.md` before doing task work and follow
+it as the source of truth for this custom agent's scope, constraints,
+procedure, and final report format.
+"""

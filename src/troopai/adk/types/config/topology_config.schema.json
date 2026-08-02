@@ -1,0 +1,3753 @@
+{
+  "$defs": {
+    "AgentFileRef": {
+      "additionalProperties": false,
+      "description": "Pointer to a standalone agent file from a topology's ``agents`` map.\n\nLets a topology source a member from its own file instead of inlining it:\n``{\"config_path\": \"spanish.json\"}``. The path is resolved relative to the\nparent topology file's directory (an absolute path is used as-is) and the\nreferenced file is loaded as an ``AgentNodeConfig`` \u2014 so a file-sourced\nmember may itself declare ``handoffs`` by name, wired in the same pass as\ninline members. A ``config_path`` target is a single agent file, never a\nnested topology, so resolution depth is fixed at one.\n\nWhen sub-agent files live in different directories and each references a\ntool module, give those modules distinct names: Python caches imported\nmodules by name, so two files both named ``tools.py`` in different\ndirectories would resolve to whichever was imported first.\n\nAttributes:\n    config_path: Path to the agent file, relative to the parent topology\n        file (or absolute).",
+      "properties": {
+        "config_path": {
+          "minLength": 1,
+          "title": "Config Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "config_path"
+      ],
+      "title": "AgentFileRef",
+      "type": "object"
+    },
+    "AgentNodeConfig": {
+      "additionalProperties": false,
+      "description": "An agent within a topology \u2014 an ``AgentConfig`` that may hand off.\n\nAttributes:\n    handoffs: Delegation targets, each a bare local agent name or a\n        ``HandoffRef`` (name plus optional description). Targets resolve\n        against the topology's ``agents`` map.",
+      "properties": {
+        "$schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "$Schema"
+        },
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "system_prompt": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/SystemPrompt"
+            },
+            {
+              "$ref": "#/$defs/DynamicPromptRef"
+            }
+          ],
+          "title": "System Prompt"
+        },
+        "llm": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "discriminator": {
+                "mapping": {
+                  "anthropic": "#/$defs/AnthropicProviderBlock",
+                  "gemini": "#/$defs/GeminiProviderBlock",
+                  "litellm": "#/$defs/LiteLLMProviderBlock",
+                  "openai-chat": "#/$defs/OpenAIChatProviderBlock",
+                  "openai-responses": "#/$defs/OpenAIResponsesProviderBlock"
+                },
+                "propertyName": "provider"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/AnthropicProviderBlock"
+                },
+                {
+                  "$ref": "#/$defs/OpenAIResponsesProviderBlock"
+                },
+                {
+                  "$ref": "#/$defs/OpenAIChatProviderBlock"
+                },
+                {
+                  "$ref": "#/$defs/GeminiProviderBlock"
+                },
+                {
+                  "$ref": "#/$defs/LiteLLMProviderBlock"
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Llm"
+        },
+        "llm_config": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LLMConfigBlock"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "guardrails": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/GuardrailsConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "tools": {
+          "items": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "$ref": "#/$defs/HostedToolRef"
+              }
+            ]
+          },
+          "title": "Tools",
+          "type": "array"
+        },
+        "output_schema": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/OutputSchemaRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Output Schema"
+        },
+        "skill_activation": {
+          "default": "lazy",
+          "enum": [
+            "eager",
+            "lazy"
+          ],
+          "title": "Skill Activation",
+          "type": "string"
+        },
+        "tool_use_behavior": {
+          "anyOf": [
+            {
+              "enum": [
+                "run_llm_again",
+                "stop_on_first_tool"
+              ],
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/StopAtTools"
+            }
+          ],
+          "default": "run_llm_again",
+          "title": "Tool Use Behavior"
+        },
+        "verbose": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/VerboseConfigRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "handoffs": {
+          "items": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "$ref": "#/$defs/HandoffRef"
+              }
+            ]
+          },
+          "title": "Handoffs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "system_prompt"
+      ],
+      "title": "AgentNodeConfig",
+      "type": "object"
+    },
+    "AndTerminationRef": {
+      "additionalProperties": false,
+      "description": "Stop when ALL child conditions fire.\n\nAttributes:\n    type: Discriminator literal ``\"and\"``.\n    conditions: Child conditions (at least two), folded with AND.",
+      "properties": {
+        "type": {
+          "const": "and",
+          "title": "Type",
+          "type": "string"
+        },
+        "conditions": {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "and": "#/$defs/AndTerminationRef",
+                "explicit_done": "#/$defs/ExplicitDoneTerminationRef",
+                "handoff_to": "#/$defs/HandoffToTerminationRef",
+                "max_turns": "#/$defs/MaxTurnsTerminationRef",
+                "or": "#/$defs/OrTerminationRef"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/MaxTurnsTerminationRef"
+              },
+              {
+                "$ref": "#/$defs/ExplicitDoneTerminationRef"
+              },
+              {
+                "$ref": "#/$defs/HandoffToTerminationRef"
+              },
+              {
+                "$ref": "#/$defs/OrTerminationRef"
+              },
+              {
+                "$ref": "#/$defs/AndTerminationRef"
+              }
+            ]
+          },
+          "minItems": 2,
+          "title": "Conditions",
+          "type": "array"
+        }
+      },
+      "required": [
+        "type",
+        "conditions"
+      ],
+      "title": "AndTerminationRef",
+      "type": "object"
+    },
+    "AnthropicConfigBlock": {
+      "additionalProperties": false,
+      "description": "Anthropic-specific config extending the agnostic block.\n\nMirrors the JSON-shaped fields of the runtime ``AnthropicConfig``. The\nstructured ``thinking`` field is accepted as a free JSON map (its only\ntyped form lives in ``anthropic.types``); the factory forwards it\nverbatim to ``AnthropicConfig.thinking``.\n\nAnthropic API reference: https://docs.anthropic.com/en/api/messages\n\nAttributes:\n    thinking: Extended-thinking config, e.g.\n        ``{\"type\": \"enabled\", \"budget_tokens\": N}``.\n    service_tier: Latency / priority tier.\n    auto_cache_control: Inject ephemeral ``cache_control`` markers.\n    cache_control_ttl: TTL for injected cache_control markers.",
+      "properties": {
+        "temperature": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Temperature"
+        },
+        "top_k": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Top K"
+        },
+        "top_p": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Top P"
+        },
+        "max_output_tokens": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Output Tokens"
+        },
+        "frequency_penalty": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Frequency Penalty"
+        },
+        "presence_penalty": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Presence Penalty"
+        },
+        "response_logprobs": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Response Logprobs"
+        },
+        "top_logprobs": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Top Logprobs"
+        },
+        "stop_sequences": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Stop Sequences"
+        },
+        "seed": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Seed"
+        },
+        "metadata": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Metadata"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "extra_body": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Body"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "extra_query": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Query"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "extra_headers": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Headers"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "extra_args": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Extra Args"
+        },
+        "timeout": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Timeout"
+        },
+        "num_retries": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Num Retries"
+        },
+        "retry_policy": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LLMRetryPolicyBlock"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "fallbacks": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fallbacks"
+        },
+        "include_usage": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Include Usage"
+        },
+        "tool_choice": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ToolChoice"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "tool_execution_mode": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ToolExecutionMode"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "reset_tool_choice": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reset Tool Choice"
+        },
+        "thinking": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Thinking"
+        },
+        "service_tier": {
+          "anyOf": [
+            {
+              "enum": [
+                "auto",
+                "standard_only"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Service Tier"
+        },
+        "auto_cache_control": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Auto Cache Control"
+        },
+        "cache_control_ttl": {
+          "anyOf": [
+            {
+              "enum": [
+                "5m",
+                "1h"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cache Control Ttl"
+        }
+      },
+      "title": "AnthropicConfigBlock",
+      "type": "object"
+    },
+    "AnthropicProviderBlock": {
+      "additionalProperties": false,
+      "description": "Typed ``llm`` block selecting the native Anthropic provider.\n\nAttributes:\n    provider: Discriminator literal ``\"anthropic\"``.\n    model: Model identifier (e.g. ``\"claude-sonnet-4-5\"``).\n    api_key: API key; falls back to ``ANTHROPIC_API_KEY`` when unset.\n    base_url: Override the Anthropic base URL.\n    max_retries: SDK-level client retries.\n    config: Optional provider-specific configuration.",
+      "properties": {
+        "provider": {
+          "const": "anthropic",
+          "title": "Provider",
+          "type": "string"
+        },
+        "model": {
+          "minLength": 1,
+          "title": "Model",
+          "type": "string"
+        },
+        "api_key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Api Key"
+        },
+        "base_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Base Url"
+        },
+        "max_retries": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Retries"
+        },
+        "config": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AnthropicConfigBlock"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "provider",
+        "model"
+      ],
+      "title": "AnthropicProviderBlock",
+      "type": "object"
+    },
+    "Body": {},
+    "DottedGuardrailRef": {
+      "additionalProperties": false,
+      "description": "A dotted-path reference to a user-defined guardrail object.\n\nAttributes:\n    ref: Dotted-path reference resolving to an ``AgentInputGuardrail`` or\n        ``AgentOutputGuardrail`` (per the list it appears in).",
+      "properties": {
+        "ref": {
+          "minLength": 1,
+          "title": "Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "ref"
+      ],
+      "title": "DottedGuardrailRef",
+      "type": "object"
+    },
+    "DynamicPromptRef": {
+      "additionalProperties": false,
+      "description": "Reference to a dynamic system-prompt callable.\n\nAttributes:\n    dynamic: Dotted-path reference to a ``DynamicSystemPrompt`` callable.",
+      "properties": {
+        "dynamic": {
+          "minLength": 1,
+          "title": "Dynamic",
+          "type": "string"
+        }
+      },
+      "required": [
+        "dynamic"
+      ],
+      "title": "DynamicPromptRef",
+      "type": "object"
+    },
+    "ExplicitDoneTerminationRef": {
+      "additionalProperties": false,
+      "description": "Stop when an agent signals explicit completion.\n\nAttributes:\n    type: Discriminator literal ``\"explicit_done\"``.",
+      "properties": {
+        "type": {
+          "const": "explicit_done",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "ExplicitDoneTerminationRef",
+      "type": "object"
+    },
+    "GeminiConfigBlock": {
+      "additionalProperties": false,
+      "description": "Gemini-specific config extending the agnostic block.\n\nMirrors the JSON-shaped fields of the runtime ``GeminiConfig``.\n``thinking_config`` and ``safety_settings`` are free JSON maps (typed\nforms in ``google.genai.types``).\n\nGemini API reference: https://ai.google.dev/api\n\nAttributes:\n    thinking_config: Extended-thinking config (free JSON map).\n    safety_settings: Per-category harm thresholds (free JSON maps).\n    cached_content_name: Resource name of a pre-created context cache.\n    response_modalities: Output modalities the model may produce.",
+      "properties": {
+        "temperature": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Temperature"
+        },
+        "top_k": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Top K"
+        },
+        "top_p": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Top P"
+        },
+        "max_output_tokens": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Output Tokens"
+        },
+        "frequency_penalty": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Frequency Penalty"
+        },
+        "presence_penalty": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Presence Penalty"
+        },
+        "response_logprobs": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Response Logprobs"
+        },
+        "top_logprobs": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Top Logprobs"
+        },
+        "stop_sequences": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Stop Sequences"
+        },
+        "seed": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Seed"
+        },
+        "metadata": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Metadata"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "extra_body": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Body"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "extra_query": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Query"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "extra_headers": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Headers"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "extra_args": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Extra Args"
+        },
+        "timeout": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Timeout"
+        },
+        "num_retries": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Num Retries"
+        },
+        "retry_policy": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LLMRetryPolicyBlock"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "fallbacks": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fallbacks"
+        },
+        "include_usage": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Include Usage"
+        },
+        "tool_choice": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ToolChoice"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "tool_execution_mode": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ToolExecutionMode"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "reset_tool_choice": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reset Tool Choice"
+        },
+        "thinking_config": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Thinking Config"
+        },
+        "safety_settings": {
+          "anyOf": [
+            {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Safety Settings"
+        },
+        "cached_content_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cached Content Name"
+        },
+        "response_modalities": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Response Modalities"
+        }
+      },
+      "title": "GeminiConfigBlock",
+      "type": "object"
+    },
+    "GeminiProviderBlock": {
+      "additionalProperties": false,
+      "description": "Typed ``llm`` block selecting the native Google Gemini provider.\n\nThe Vertex ``credentials`` object has no JSON form and is not\nexpressible here \u2014 construct the agent in Python for custom Vertex\ncredentials. ``api_key`` / ``vertexai`` / ``project`` / ``location`` are\ncovered.\n\nAttributes:\n    provider: Discriminator literal ``\"gemini\"``.\n    model: Model identifier (e.g. ``\"gemini-2.5-pro\"``).\n    api_key: API key; falls back to ``GOOGLE_API_KEY`` / ``GEMINI_API_KEY``.\n    vertexai: Use Vertex AI instead of the Gemini Developer API.\n    project: Google Cloud project (Vertex).\n    location: Google Cloud location (Vertex).\n    base_url: Override the Gemini base URL.\n    config: Optional provider-specific configuration.",
+      "properties": {
+        "provider": {
+          "const": "gemini",
+          "title": "Provider",
+          "type": "string"
+        },
+        "model": {
+          "minLength": 1,
+          "title": "Model",
+          "type": "string"
+        },
+        "api_key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Api Key"
+        },
+        "vertexai": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Vertexai"
+        },
+        "project": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Project"
+        },
+        "location": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Location"
+        },
+        "base_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Base Url"
+        },
+        "config": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/GeminiConfigBlock"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "provider",
+        "model"
+      ],
+      "title": "GeminiProviderBlock",
+      "type": "object"
+    },
+    "GraphEdgeRef": {
+      "additionalProperties": false,
+      "description": "A directed edge between two nodes, optionally conditional.\n\nAttributes:\n    from_: Source node id (the JSON key is ``from``).\n    to: Destination node id.\n    when: Optional dotted reference to an edge-condition predicate\n        ``(NodeResult) -> bool``.",
+      "properties": {
+        "from": {
+          "title": "From",
+          "type": "string"
+        },
+        "to": {
+          "title": "To",
+          "type": "string"
+        },
+        "when": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "When"
+        }
+      },
+      "required": [
+        "from",
+        "to"
+      ],
+      "title": "GraphEdgeRef",
+      "type": "object"
+    },
+    "GraphNodeRef": {
+      "additionalProperties": false,
+      "description": "A graph node hosting a local agent.\n\nAttributes:\n    agent: Local name of the agent this node runs.\n    merge: Optional built-in fan-in merge name (``concat_text``,\n        ``last_wins``, ``extend_items``, ``first_wins``).\n    join: Optional join semantics for fan-in (``and`` default, ``or``).",
+      "properties": {
+        "agent": {
+          "title": "Agent",
+          "type": "string"
+        },
+        "merge": {
+          "anyOf": [
+            {
+              "enum": [
+                "concat_text",
+                "last_wins",
+                "extend_items",
+                "first_wins"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Merge"
+        },
+        "join": {
+          "anyOf": [
+            {
+              "enum": [
+                "and",
+                "or"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Join"
+        }
+      },
+      "required": [
+        "agent"
+      ],
+      "title": "GraphNodeRef",
+      "type": "object"
+    },
+    "GraphRef": {
+      "additionalProperties": false,
+      "description": "Declarative graph: nodes, edges, entry, terminals.\n\nAttributes:\n    id: Graph identifier.\n    nodes: Map of node id to node config.\n    edges: Directed edges between node ids.\n    entry: The entry node id.\n    terminals: Terminal node ids (the run exits when any fires).",
+      "properties": {
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "nodes": {
+          "additionalProperties": {
+            "$ref": "#/$defs/GraphNodeRef"
+          },
+          "minProperties": 1,
+          "title": "Nodes",
+          "type": "object"
+        },
+        "edges": {
+          "items": {
+            "$ref": "#/$defs/GraphEdgeRef"
+          },
+          "title": "Edges",
+          "type": "array"
+        },
+        "entry": {
+          "title": "Entry",
+          "type": "string"
+        },
+        "terminals": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Terminals",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "nodes",
+        "entry",
+        "terminals"
+      ],
+      "title": "GraphRef",
+      "type": "object"
+    },
+    "GuardrailsConfig": {
+      "additionalProperties": false,
+      "description": "Input and output guardrail lists for an agent.\n\nAttributes:\n    input: Input-phase guardrail entries.\n    output: Output-phase guardrail entries.",
+      "properties": {
+        "input": {
+          "items": {
+            "$ref": "#/$defs/DottedGuardrailRef"
+          },
+          "title": "Input",
+          "type": "array"
+        },
+        "output": {
+          "items": {
+            "$ref": "#/$defs/DottedGuardrailRef"
+          },
+          "title": "Output",
+          "type": "array"
+        }
+      },
+      "title": "GuardrailsConfig",
+      "type": "object"
+    },
+    "HandoffRef": {
+      "additionalProperties": false,
+      "description": "Reference to a handoff target by local agent name.\n\nThe bare-string form (just the target name) is also accepted wherever a\nhandoff is declared; this object form adds an optional description.\n\nAttributes:\n    target: Local name of the target agent (a key in the topology's\n        ``agents`` map).\n    description: Optional tool description shown to the LLM for this\n        handoff.",
+      "properties": {
+        "target": {
+          "minLength": 1,
+          "title": "Target",
+          "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        }
+      },
+      "required": [
+        "target"
+      ],
+      "title": "HandoffRef",
+      "type": "object"
+    },
+    "HandoffToTerminationRef": {
+      "additionalProperties": false,
+      "description": "Stop when control hands off to a named agent.\n\nAttributes:\n    type: Discriminator literal ``\"handoff_to\"``.\n    target: Local name of the agent whose entry ends the swarm.",
+      "properties": {
+        "type": {
+          "const": "handoff_to",
+          "title": "Type",
+          "type": "string"
+        },
+        "target": {
+          "minLength": 1,
+          "title": "Target",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "target"
+      ],
+      "title": "HandoffToTerminationRef",
+      "type": "object"
+    },
+    "Headers": {
+      "additionalProperties": true,
+      "type": "object"
+    },
+    "HostedToolRef": {
+      "additionalProperties": false,
+      "description": "Reference to a provider-hosted tool by type name with free-form args.\n\nAttributes:\n    type: The hosted-tool type name (a key in the hosted-tool registry).\n    args: Constructor arguments forwarded to the ``HostedTool`` subclass.",
+      "properties": {
+        "type": {
+          "enum": [
+            "web_search",
+            "code_execution",
+            "file_search",
+            "image_generation",
+            "url_context",
+            "hosted_mcp"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "args": {
+          "additionalProperties": true,
+          "title": "Args",
+          "type": "object"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "HostedToolRef",
+      "type": "object"
+    },
+    "LLMConfigBlock": {
+      "additionalProperties": false,
+      "description": "JSON mirror of the provider-agnostic ``LLMConfig`` surface.\n\nThis is the type of a standalone top-level ``llm_config`` block and the\nbase for every provider config sub-model. Only JSON-shaped fields are\nsurfaced; ``timeout`` is a float (an ``httpx.Timeout`` object has no\nJSON form) and ``retry_policy`` is the nested\n:class:`LLMRetryPolicyBlock`.\n\nAttributes:\n    temperature: Sampling temperature (0\u20131).\n    top_k: Top-k filtering.\n    top_p: Nucleus sampling.\n    max_output_tokens: Maximum tokens in the response.\n    frequency_penalty: Penalise repeated tokens by frequency.\n    presence_penalty: Penalise repeated tokens by presence.\n    response_logprobs: Whether to return log probabilities.\n    top_logprobs: Number of top candidate tokens to return log probs for.\n    stop_sequences: Stop generation on any of these strings.\n    seed: Random seed for reproducibility.\n    metadata: Arbitrary metadata passed to the LLM API.\n    extra_body: Extra fields merged into the API request body.\n    extra_query: Extra query parameters for the API request.\n    extra_headers: Extra HTTP headers for the API request.\n    extra_args: Catch-all for provider-specific parameters.\n    timeout: Request timeout in seconds (float only).\n    num_retries: SDK-level retries for transient API errors.\n    retry_policy: Framework-level retry policy.\n    fallbacks: Alternative model names to try on failure.\n    include_usage: Include token usage in streaming responses.\n    tool_choice: Tool selection strategy.\n    tool_execution_mode: Sequential or parallel tool execution.\n    reset_tool_choice: Reset ``tool_choice`` to ``\"auto\"`` after tools.",
+      "properties": {
+        "temperature": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Temperature"
+        },
+        "top_k": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Top K"
+        },
+        "top_p": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Top P"
+        },
+        "max_output_tokens": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Output Tokens"
+        },
+        "frequency_penalty": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Frequency Penalty"
+        },
+        "presence_penalty": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Presence Penalty"
+        },
+        "response_logprobs": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Response Logprobs"
+        },
+        "top_logprobs": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Top Logprobs"
+        },
+        "stop_sequences": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Stop Sequences"
+        },
+        "seed": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Seed"
+        },
+        "metadata": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Metadata"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "extra_body": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Body"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "extra_query": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Query"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "extra_headers": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Headers"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "extra_args": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Extra Args"
+        },
+        "timeout": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Timeout"
+        },
+        "num_retries": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Num Retries"
+        },
+        "retry_policy": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LLMRetryPolicyBlock"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "fallbacks": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fallbacks"
+        },
+        "include_usage": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Include Usage"
+        },
+        "tool_choice": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ToolChoice"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "tool_execution_mode": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ToolExecutionMode"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "reset_tool_choice": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reset Tool Choice"
+        }
+      },
+      "title": "LLMConfigBlock",
+      "type": "object"
+    },
+    "LLMRetryPolicyBlock": {
+      "additionalProperties": false,
+      "description": "JSON mirror of ``LLMRetryPolicy`` for declarative configs.\n\nEvery field is optional so that an unset key falls back to the runtime\npolicy's own default rather than a duplicated default that could drift.\n``retry_on`` is a list in JSON; the provider factory rebuilds the\nruntime ``frozenset``.\n\nAttributes:\n    max_retries: Maximum retry attempts before giving up.\n    initial_delay: Delay in seconds before the first retry.\n    max_delay: Upper bound on the delay between retries.\n    multiplier: Exponential growth factor applied each retry.\n    jitter: Randomize the delay to avoid synchronized retry storms.\n    retry_on: Error kinds to retry; absent falls back to the runtime\n        policy's default (rate-limit only).",
+      "properties": {
+        "max_retries": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Retries"
+        },
+        "initial_delay": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Initial Delay"
+        },
+        "max_delay": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Delay"
+        },
+        "multiplier": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Multiplier"
+        },
+        "jitter": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Jitter"
+        },
+        "retry_on": {
+          "anyOf": [
+            {
+              "items": {
+                "enum": [
+                  "rate_limit",
+                  "server_error",
+                  "timeout"
+                ],
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Retry On"
+        }
+      },
+      "title": "LLMRetryPolicyBlock",
+      "type": "object"
+    },
+    "LiteLLMConfigBlock": {
+      "additionalProperties": false,
+      "description": "LiteLLM-specific config extending the agnostic block.\n\nMirrors the JSON-shaped fields of the runtime ``LiteLLMConfig``.\n``thinking`` and ``cache_control_injection_points`` are free JSON maps.\n\nRefs:\n    - https://docs.litellm.ai/docs/reasoning_content\n    - https://docs.litellm.ai/docs/completion/prompt_caching\n\nAttributes:\n    reasoning_effort: Reasoning effort level.\n    thinking: Anthropic thinking budget (free JSON map).\n    cache_control_injection_points: Where litellm injects cache_control.\n    auto_cache_control: One-bool opt-in that injects ``cache_control`` at\n        the canonical positions (system message + last input message)\n        instead of a hand-written ``cache_control_injection_points``.\n    cached_content: Gemini pre-created CachedContent ID.\n    prompt_cache_key: OpenAI/Deepseek routing hint for cache hits.\n    prompt_cache_retention: OpenAI/Deepseek cache duration.",
+      "properties": {
+        "temperature": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Temperature"
+        },
+        "top_k": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Top K"
+        },
+        "top_p": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Top P"
+        },
+        "max_output_tokens": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Output Tokens"
+        },
+        "frequency_penalty": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Frequency Penalty"
+        },
+        "presence_penalty": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Presence Penalty"
+        },
+        "response_logprobs": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Response Logprobs"
+        },
+        "top_logprobs": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Top Logprobs"
+        },
+        "stop_sequences": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Stop Sequences"
+        },
+        "seed": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Seed"
+        },
+        "metadata": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Metadata"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "extra_body": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Body"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "extra_query": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Query"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "extra_headers": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Headers"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "extra_args": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Extra Args"
+        },
+        "timeout": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Timeout"
+        },
+        "num_retries": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Num Retries"
+        },
+        "retry_policy": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LLMRetryPolicyBlock"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "fallbacks": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fallbacks"
+        },
+        "include_usage": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Include Usage"
+        },
+        "tool_choice": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ToolChoice"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "tool_execution_mode": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ToolExecutionMode"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "reset_tool_choice": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reset Tool Choice"
+        },
+        "reasoning_effort": {
+          "anyOf": [
+            {
+              "enum": [
+                "none",
+                "minimal",
+                "low",
+                "medium",
+                "high",
+                "xhigh"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reasoning Effort"
+        },
+        "thinking": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Thinking"
+        },
+        "cache_control_injection_points": {
+          "anyOf": [
+            {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cache Control Injection Points"
+        },
+        "auto_cache_control": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Auto Cache Control"
+        },
+        "cached_content": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cached Content"
+        },
+        "prompt_cache_key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prompt Cache Key"
+        },
+        "prompt_cache_retention": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prompt Cache Retention"
+        }
+      },
+      "title": "LiteLLMConfigBlock",
+      "type": "object"
+    },
+    "LiteLLMProviderBlock": {
+      "additionalProperties": false,
+      "description": "Typed ``llm`` block selecting the LiteLLM multi-provider backend.\n\nAttributes:\n    provider: Discriminator literal ``\"litellm\"``.\n    model: litellm model identifier (e.g. ``\"gpt-4o\"``,\n        ``\"anthropic/claude-sonnet-4-5\"``).\n    api_key: API key for the underlying provider.\n    base_url: Override the provider base URL.\n    extra_params: Default parameters merged into every litellm call.\n    config: Optional provider-specific configuration.",
+      "properties": {
+        "provider": {
+          "const": "litellm",
+          "title": "Provider",
+          "type": "string"
+        },
+        "model": {
+          "minLength": 1,
+          "title": "Model",
+          "type": "string"
+        },
+        "api_key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Api Key"
+        },
+        "base_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Base Url"
+        },
+        "extra_params": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Extra Params"
+        },
+        "config": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LiteLLMConfigBlock"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "provider",
+        "model"
+      ],
+      "title": "LiteLLMProviderBlock",
+      "type": "object"
+    },
+    "MaxTurnsTerminationRef": {
+      "additionalProperties": false,
+      "description": "Stop after a fixed number of turns.\n\nAttributes:\n    type: Discriminator literal ``\"max_turns\"``.\n    limit: Positive turn limit.",
+      "properties": {
+        "type": {
+          "const": "max_turns",
+          "title": "Type",
+          "type": "string"
+        },
+        "limit": {
+          "exclusiveMinimum": 0,
+          "title": "Limit",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "type",
+        "limit"
+      ],
+      "title": "MaxTurnsTerminationRef",
+      "type": "object"
+    },
+    "Metadata": {
+      "additionalProperties": false,
+      "description": "Metadata for LLM requests.\n\nUsed to pass context like user identifiers to providers for abuse\nmonitoring or logging.",
+      "properties": {
+        "user_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "User Id"
+        }
+      },
+      "title": "Metadata",
+      "type": "object"
+    },
+    "OpenAIChatConfigBlock": {
+      "additionalProperties": false,
+      "description": "OpenAI Chat-Completions-specific config extending the agnostic block.\n\nMirrors the JSON-shaped fields of the runtime\n``OpenAIChatCompletionsConfig``. ``audio`` / ``web_search_options`` /\n``prediction`` are free JSON maps (typed forms in ``openai.types.chat``).\n\nOpenAI API reference:\nhttps://platform.openai.com/docs/api-reference/chat/create\n\nAttributes:\n    audio: Audio-output configuration (free JSON map).\n    web_search_options: Hosted web-search configuration (free JSON map).\n    prediction: Predicted-output content (free JSON map).\n    modalities: Output modalities the model may produce.\n    store: Persist the completion for eval / fine-tune pipelines.\n    service_tier: Latency / priority tier.\n    prompt_cache_key: Prompt-cache routing hint.\n    prompt_cache_retention: Cache duration policy.\n    verbosity: Response-length hint for gpt-5-class models.",
+      "properties": {
+        "temperature": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Temperature"
+        },
+        "top_k": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Top K"
+        },
+        "top_p": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Top P"
+        },
+        "max_output_tokens": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Output Tokens"
+        },
+        "frequency_penalty": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Frequency Penalty"
+        },
+        "presence_penalty": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Presence Penalty"
+        },
+        "response_logprobs": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Response Logprobs"
+        },
+        "top_logprobs": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Top Logprobs"
+        },
+        "stop_sequences": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Stop Sequences"
+        },
+        "seed": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Seed"
+        },
+        "metadata": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Metadata"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "extra_body": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Body"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "extra_query": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Query"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "extra_headers": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Headers"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "extra_args": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Extra Args"
+        },
+        "timeout": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Timeout"
+        },
+        "num_retries": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Num Retries"
+        },
+        "retry_policy": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LLMRetryPolicyBlock"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "fallbacks": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fallbacks"
+        },
+        "include_usage": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Include Usage"
+        },
+        "tool_choice": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ToolChoice"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "tool_execution_mode": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ToolExecutionMode"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "reset_tool_choice": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reset Tool Choice"
+        },
+        "audio": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Audio"
+        },
+        "web_search_options": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Web Search Options"
+        },
+        "prediction": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prediction"
+        },
+        "modalities": {
+          "anyOf": [
+            {
+              "items": {
+                "enum": [
+                  "text",
+                  "audio"
+                ],
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Modalities"
+        },
+        "store": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Store"
+        },
+        "service_tier": {
+          "anyOf": [
+            {
+              "enum": [
+                "auto",
+                "default",
+                "flex"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Service Tier"
+        },
+        "prompt_cache_key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prompt Cache Key"
+        },
+        "prompt_cache_retention": {
+          "anyOf": [
+            {
+              "enum": [
+                "in_memory",
+                "24h"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prompt Cache Retention"
+        },
+        "verbosity": {
+          "anyOf": [
+            {
+              "enum": [
+                "low",
+                "medium",
+                "high"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Verbosity"
+        }
+      },
+      "title": "OpenAIChatConfigBlock",
+      "type": "object"
+    },
+    "OpenAIChatProviderBlock": {
+      "additionalProperties": false,
+      "description": "Typed ``llm`` block selecting the native OpenAI Chat-Completions provider.\n\nAttributes:\n    provider: Discriminator literal ``\"openai-chat\"``.\n    model: Model identifier (e.g. ``\"gpt-4o\"``).\n    api_key: API key; falls back to ``OPENAI_API_KEY`` when unset.\n    base_url: Override the OpenAI base URL.\n    organization: OpenAI organization id.\n    project: OpenAI project id.\n    max_retries: SDK-level client retries.\n    config: Optional provider-specific configuration.",
+      "properties": {
+        "provider": {
+          "const": "openai-chat",
+          "title": "Provider",
+          "type": "string"
+        },
+        "model": {
+          "minLength": 1,
+          "title": "Model",
+          "type": "string"
+        },
+        "api_key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Api Key"
+        },
+        "base_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Base Url"
+        },
+        "organization": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Organization"
+        },
+        "project": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Project"
+        },
+        "max_retries": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Retries"
+        },
+        "config": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OpenAIChatConfigBlock"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "provider",
+        "model"
+      ],
+      "title": "OpenAIChatProviderBlock",
+      "type": "object"
+    },
+    "OpenAIResponsesConfigBlock": {
+      "additionalProperties": false,
+      "description": "OpenAI Responses-specific config extending the agnostic block.\n\nMirrors the JSON-shaped fields of the runtime ``OpenAIResponsesConfig``.\n``reasoning`` is a free JSON map (typed form in\n``openai.types.shared_params``).\n\nOpenAI API reference:\nhttps://platform.openai.com/docs/api-reference/responses/create\n\nAttributes:\n    reasoning: Reasoning config (free JSON map).\n    include: Response-item inclusion list.\n    store: Persist the response server-side.\n    previous_response_id: Chain onto a prior response ID.\n    truncation: Oversize-input handling.\n    service_tier: Latency / priority tier.\n    prompt_cache_key: Prompt-cache routing hint.\n    prompt_cache_retention: Cache duration policy.\n    max_tool_calls: Upper bound on tool invocations per response.\n    background: Run the response asynchronously server-side.",
+      "properties": {
+        "temperature": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Temperature"
+        },
+        "top_k": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Top K"
+        },
+        "top_p": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Top P"
+        },
+        "max_output_tokens": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Output Tokens"
+        },
+        "frequency_penalty": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Frequency Penalty"
+        },
+        "presence_penalty": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Presence Penalty"
+        },
+        "response_logprobs": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Response Logprobs"
+        },
+        "top_logprobs": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Top Logprobs"
+        },
+        "stop_sequences": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Stop Sequences"
+        },
+        "seed": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Seed"
+        },
+        "metadata": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Metadata"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "extra_body": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Body"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "extra_query": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Query"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "extra_headers": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Headers"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "extra_args": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Extra Args"
+        },
+        "timeout": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Timeout"
+        },
+        "num_retries": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Num Retries"
+        },
+        "retry_policy": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LLMRetryPolicyBlock"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "fallbacks": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fallbacks"
+        },
+        "include_usage": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Include Usage"
+        },
+        "tool_choice": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ToolChoice"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "tool_execution_mode": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ToolExecutionMode"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "reset_tool_choice": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reset Tool Choice"
+        },
+        "reasoning": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reasoning"
+        },
+        "include": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Include"
+        },
+        "store": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Store"
+        },
+        "previous_response_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Previous Response Id"
+        },
+        "truncation": {
+          "anyOf": [
+            {
+              "enum": [
+                "auto",
+                "disabled"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Truncation"
+        },
+        "service_tier": {
+          "anyOf": [
+            {
+              "enum": [
+                "auto",
+                "default",
+                "flex",
+                "scale",
+                "priority"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Service Tier"
+        },
+        "prompt_cache_key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prompt Cache Key"
+        },
+        "prompt_cache_retention": {
+          "anyOf": [
+            {
+              "enum": [
+                "in_memory",
+                "24h"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prompt Cache Retention"
+        },
+        "max_tool_calls": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Tool Calls"
+        },
+        "background": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Background"
+        }
+      },
+      "title": "OpenAIResponsesConfigBlock",
+      "type": "object"
+    },
+    "OpenAIResponsesProviderBlock": {
+      "additionalProperties": false,
+      "description": "Typed ``llm`` block selecting the native OpenAI Responses provider.\n\nAttributes:\n    provider: Discriminator literal ``\"openai-responses\"``.\n    model: Model identifier (e.g. ``\"gpt-4o\"``).\n    api_key: API key; falls back to ``OPENAI_API_KEY`` when unset.\n    base_url: Override the OpenAI base URL.\n    organization: OpenAI organization id.\n    project: OpenAI project id.\n    max_retries: SDK-level client retries.\n    config: Optional provider-specific configuration.",
+      "properties": {
+        "provider": {
+          "const": "openai-responses",
+          "title": "Provider",
+          "type": "string"
+        },
+        "model": {
+          "minLength": 1,
+          "title": "Model",
+          "type": "string"
+        },
+        "api_key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Api Key"
+        },
+        "base_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Base Url"
+        },
+        "organization": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Organization"
+        },
+        "project": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Project"
+        },
+        "max_retries": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Retries"
+        },
+        "config": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OpenAIResponsesConfigBlock"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "provider",
+        "model"
+      ],
+      "title": "OpenAIResponsesProviderBlock",
+      "type": "object"
+    },
+    "OrTerminationRef": {
+      "additionalProperties": false,
+      "description": "Stop when ANY child condition fires.\n\nAttributes:\n    type: Discriminator literal ``\"or\"``.\n    conditions: Child conditions (at least two), folded with OR.",
+      "properties": {
+        "type": {
+          "const": "or",
+          "title": "Type",
+          "type": "string"
+        },
+        "conditions": {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "and": "#/$defs/AndTerminationRef",
+                "explicit_done": "#/$defs/ExplicitDoneTerminationRef",
+                "handoff_to": "#/$defs/HandoffToTerminationRef",
+                "max_turns": "#/$defs/MaxTurnsTerminationRef",
+                "or": "#/$defs/OrTerminationRef"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/MaxTurnsTerminationRef"
+              },
+              {
+                "$ref": "#/$defs/ExplicitDoneTerminationRef"
+              },
+              {
+                "$ref": "#/$defs/HandoffToTerminationRef"
+              },
+              {
+                "$ref": "#/$defs/OrTerminationRef"
+              },
+              {
+                "$ref": "#/$defs/AndTerminationRef"
+              }
+            ]
+          },
+          "minItems": 2,
+          "title": "Conditions",
+          "type": "array"
+        }
+      },
+      "required": [
+        "type",
+        "conditions"
+      ],
+      "title": "OrTerminationRef",
+      "type": "object"
+    },
+    "OutputSchemaRef": {
+      "additionalProperties": false,
+      "description": "Reference to an output-schema class with enforcement.\n\nAttributes:\n    ref: Dotted-path reference to the output-schema class.\n    enforcement: How the generated JSON schema is processed before being\n        sent to the LLM.",
+      "properties": {
+        "ref": {
+          "minLength": 1,
+          "title": "Ref",
+          "type": "string"
+        },
+        "enforcement": {
+          "default": "strict",
+          "enum": [
+            "none",
+            "normalized",
+            "strict",
+            "compact"
+          ],
+          "title": "Enforcement",
+          "type": "string"
+        }
+      },
+      "required": [
+        "ref"
+      ],
+      "title": "OutputSchemaRef",
+      "type": "object"
+    },
+    "PolicyRef": {
+      "additionalProperties": false,
+      "description": "Swarm routing policy selector.\n\nAttributes:\n    type: Which built-in policy to use.",
+      "properties": {
+        "type": {
+          "default": "llm_handoff",
+          "enum": [
+            "llm_handoff",
+            "round_robin"
+          ],
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "title": "PolicyRef",
+      "type": "object"
+    },
+    "Query": {
+      "additionalProperties": true,
+      "type": "object"
+    },
+    "StopAtTools": {
+      "description": "Stop execution when any of the named tools are called.\n\nWhen the LLM calls one of the named tools, its output becomes\nthe final result and no further LLM call is made.\n\nAttributes:\n    stop_at_tool_names: List of tool names that trigger early stopping.",
+      "properties": {
+        "stop_at_tool_names": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Stop At Tool Names",
+          "type": "array"
+        }
+      },
+      "required": [
+        "stop_at_tool_names"
+      ],
+      "title": "StopAtTools",
+      "type": "object"
+    },
+    "SwarmConfigRef": {
+      "additionalProperties": false,
+      "description": "JSON-friendly subset of ``SwarmConfig`` budgets.\n\nAttributes:\n    max_handoffs: Swarm-wide cap on agent switches.\n    max_total_tokens: Swarm-wide cumulative token cap.",
+      "properties": {
+        "max_handoffs": {
+          "default": 20,
+          "exclusiveMinimum": 0,
+          "title": "Max Handoffs",
+          "type": "integer"
+        },
+        "max_total_tokens": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Total Tokens"
+        }
+      },
+      "title": "SwarmConfigRef",
+      "type": "object"
+    },
+    "SwarmRef": {
+      "additionalProperties": false,
+      "description": "Declarative swarm: members, entry, policy, termination, budgets.\n\nAttributes:\n    members: Local agent names participating in the swarm.\n    entry: Local name of the agent that takes the first turn.\n    policy: Routing policy (defaults to LLM handoff).\n    termination: The (possibly composed) stop condition.\n    config: Optional budget config.",
+      "properties": {
+        "members": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Members",
+          "type": "array"
+        },
+        "entry": {
+          "minLength": 1,
+          "title": "Entry",
+          "type": "string"
+        },
+        "policy": {
+          "$ref": "#/$defs/PolicyRef"
+        },
+        "termination": {
+          "discriminator": {
+            "mapping": {
+              "and": "#/$defs/AndTerminationRef",
+              "explicit_done": "#/$defs/ExplicitDoneTerminationRef",
+              "handoff_to": "#/$defs/HandoffToTerminationRef",
+              "max_turns": "#/$defs/MaxTurnsTerminationRef",
+              "or": "#/$defs/OrTerminationRef"
+            },
+            "propertyName": "type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/MaxTurnsTerminationRef"
+            },
+            {
+              "$ref": "#/$defs/ExplicitDoneTerminationRef"
+            },
+            {
+              "$ref": "#/$defs/HandoffToTerminationRef"
+            },
+            {
+              "$ref": "#/$defs/OrTerminationRef"
+            },
+            {
+              "$ref": "#/$defs/AndTerminationRef"
+            }
+          ],
+          "title": "Termination"
+        },
+        "config": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SwarmConfigRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "members",
+        "entry",
+        "termination"
+      ],
+      "title": "SwarmRef",
+      "type": "object"
+    },
+    "SystemPrompt": {
+      "additionalProperties": false,
+      "description": "Structured system prompt with discrete sections.\n\nAll fields except ``role`` are optional. When rendered, only non-empty\nfields are included, producing a clean prompt string.\n\nAttributes:\n    role: Core identity and expertise of the agent (required).\n    context: Background information or domain context.\n    guidelines: Ordered list of behavioral guidelines.\n    tone: Desired response tone (enum or free-form string).\n    constraints: Hard constraints the agent must follow.\n    examples: Few-shot examples to include in the prompt.\n    output_format: Instructions for response formatting.\n    knowledge: Domain-specific facts or reference material.",
+      "properties": {
+        "role": {
+          "title": "Role",
+          "type": "string"
+        },
+        "context": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Context"
+        },
+        "guidelines": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Guidelines"
+        },
+        "tone": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SystemPromptTone"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tone"
+        },
+        "constraints": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Constraints"
+        },
+        "examples": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Examples"
+        },
+        "output_format": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Output Format"
+        },
+        "knowledge": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Knowledge"
+        }
+      },
+      "required": [
+        "role"
+      ],
+      "title": "SystemPrompt",
+      "type": "object"
+    },
+    "SystemPromptTone": {
+      "description": "Predefined tone options for system prompts.",
+      "enum": [
+        "formal",
+        "informal",
+        "technical",
+        "conversational",
+        "friendly",
+        "professional"
+      ],
+      "title": "SystemPromptTone",
+      "type": "string"
+    },
+    "ToolChoice": {
+      "anyOf": [
+        {
+          "enum": [
+            "auto",
+            "required",
+            "none"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "string"
+        }
+      ]
+    },
+    "ToolExecutionMode": {
+      "description": "Controls whether the LLM may invoke multiple tools in a single turn.\n\nMaps to the ``parallel_tool_calls`` parameter originating from the\nOpenAI Chat Completions API.  Supported by multiple providers via\nlitellm.\n\nArgs:\n    SEQUENTIAL: One tool call per LLM turn (default). The LLM must\n        complete one tool call before requesting another.\n    PARALLEL: The LLM may request multiple tool calls in a single\n        response. All requested tools execute concurrently.",
+      "enum": [
+        "sequential",
+        "parallel"
+      ],
+      "title": "ToolExecutionMode",
+      "type": "string"
+    },
+    "VerboseConfigRef": {
+      "additionalProperties": false,
+      "description": "JSON-friendly subset of ``VerboseConfig``.\n\nOnly the scalar knobs are declarable. The output stream and per-event\nstyle table on the runtime ``VerboseConfig`` have no JSON form and keep\ntheir defaults.\n\nAttributes:\n    enabled: Master switch for verbose output.\n    mode: Render backend selector.\n    use_color: Whether to emit ANSI/Rich color.\n    use_rich: Prefer the Rich renderer when available.\n    show_timestamps: Prefix each line with an ``HH:MM:SS`` stamp.",
+      "properties": {
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "mode": {
+          "default": "auto",
+          "enum": [
+            "auto",
+            "line",
+            "panel",
+            "off"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "use_color": {
+          "default": true,
+          "title": "Use Color",
+          "type": "boolean"
+        },
+        "use_rich": {
+          "default": true,
+          "title": "Use Rich",
+          "type": "boolean"
+        },
+        "show_timestamps": {
+          "default": false,
+          "title": "Show Timestamps",
+          "type": "boolean"
+        }
+      },
+      "title": "VerboseConfigRef",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Root model for a multi-agent topology file.\n\nA topology may declare both ``swarm`` and ``graph``; they are independent\nviews over the same ``agents`` map and the caller chooses which to run.\n\nAttributes:\n    agents: Map of local agent name to its node configuration \u2014 an inline\n        ``AgentNodeConfig`` or an ``AgentFileRef`` pointing at a standalone\n        agent file. The keys are the handles handoff targets resolve\n        against.\n    entry: Optional name of the entry agent (a key in ``agents``).\n    swarm: Optional swarm built over the declared agents.\n    graph: Optional graph built over the declared agents.",
+  "properties": {
+    "$schema": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "$Schema"
+    },
+    "agents": {
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/AgentNodeConfig"
+          },
+          {
+            "$ref": "#/$defs/AgentFileRef"
+          }
+        ]
+      },
+      "minProperties": 1,
+      "title": "Agents",
+      "type": "object"
+    },
+    "entry": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Entry"
+    },
+    "swarm": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/SwarmRef"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "graph": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/GraphRef"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    }
+  },
+  "required": [
+    "agents"
+  ],
+  "title": "TopologyConfig",
+  "type": "object"
+}

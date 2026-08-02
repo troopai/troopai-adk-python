@@ -1,0 +1,6 @@
+{
+  "$schema": "../../src/troopai/adk/types/config/agent_node_config.schema.json",
+  "name": "spanish",
+  "system_prompt": "You reply only in Spanish, in one short sentence.",
+  "llm": "claude-haiku-4-5-20251001"
+}

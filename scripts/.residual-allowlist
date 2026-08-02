@@ -1,0 +1,5 @@
+# G-06 residual-sweep allowlist (versioned). Format: path[:LINENO] — reason on its own comment line.
+# Owner-approved 2026-08-02: "proprietary command transport" is descriptive vendor sense
+# (the hosted provider's transport), not a proprietary-license claim about this package;
+# rewording is forbidden by the zero-non-rename-change rule.
+src/troopai/adk/sandbox/clients/hosted/remote_vm/__init__.py:7

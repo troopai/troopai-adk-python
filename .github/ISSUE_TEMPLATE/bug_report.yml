@@ -1,0 +1,61 @@
+name: 🐛 Bug report
+description: Report a defect in the TroopAI ADK
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Please search existing issues first, and give
+        us a **minimal runnable reproducer** — it is by far the fastest path
+        to a fix.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Describe the bug
+      description: What happened, and what did you expect to happen instead?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal reproducer
+      description: A small, self-contained script that reproduces the bug.
+      render: python
+    validations:
+      required: true
+  - type: input
+    id: adk-version
+    attributes:
+      label: ADK version
+      description: 'Output of `python -c "import troopai.adk as a; print(a.__version__)"`'
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: input
+    id: python-version
+    attributes:
+      label: Python version
+      placeholder: "3.12.x"
+    validations:
+      required: true
+  - type: dropdown
+    id: provider
+    attributes:
+      label: LLM provider path
+      description: Which LLM backend were you using (if any)?
+      options:
+        - litellm (default)
+        - Native Anthropic
+        - Native OpenAI
+        - Native Gemini
+        - Not applicable
+    validations:
+      required: false
+  - type: textarea
+    id: traceback
+    attributes:
+      label: Traceback / logs
+      description: Paste any stack trace or relevant log output.
+      render: text
+    validations:
+      required: false

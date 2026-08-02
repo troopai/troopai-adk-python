@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img"
+     aria-label="No Free Lunch — specialist and generalist performance curves over problem distributions, with equal area under the curve."
+     class="themed">
+  <defs>
+    <style>
+      .frame    { fill: var(--svg-fill, #eef2f8); stroke: var(--svg-stroke, #1c1e21); stroke-width: 1.5; }
+      .axis     { stroke: var(--svg-stroke, #1c1e21); stroke-width: 1.5; fill: none; }
+      .tick     { stroke: var(--svg-stroke, #1c1e21); stroke-width: 1; }
+      .label    { font-family: 'Inter', sans-serif; fill: var(--svg-text, #1c1e21); font-size: 13px; }
+      .small    { font-family: 'Inter', sans-serif; fill: var(--svg-text, #1c1e21); font-size: 11px; }
+      .title    { font-family: 'Inter', sans-serif; fill: var(--svg-text, #1c1e21); font-size: 16px; font-weight: 600; }
+      .spec     { fill: none; stroke: #1976d2; stroke-width: 2.5; }
+      .gen      { fill: none; stroke: #ef6c00; stroke-width: 2.5; stroke-dasharray: 6 3; }
+      .specfill { fill: #1976d2; fill-opacity: 0.12; }
+      .genfill  { fill: #ef6c00; fill-opacity: 0.12; }
+    </style>
+  </defs>
+  <rect class="frame" x="10" y="10" width="620" height="340" rx="8"/>
+  <text class="title" x="320" y="36" text-anchor="middle">No Free Lunch — equal area, different shapes</text>
+  <text class="small" x="320" y="54" text-anchor="middle">Averaged over all problem distributions, every algorithm performs identically.</text>
+  <!-- axes -->
+  <line x1="60" y1="290" x2="580" y2="290" class="axis"/>
+  <line x1="60" y1="290" x2="60" y2="80" class="axis"/>
+  <text class="label" x="60" y="310" text-anchor="start">problem distributions →</text>
+  <text class="label" x="50" y="80" text-anchor="end" transform="rotate(-90 50 80)">performance</text>
+  <!-- specialist curve: high near target, falls off -->
+  <path class="specfill" d="M 60 290 L 60 230 C 140 110, 240 110, 320 230 L 320 290 Z"/>
+  <path class="spec" d="M 60 230 C 140 110, 240 110, 320 230"/>
+  <text class="label" x="190" y="135" text-anchor="middle" fill="#1976d2">specialist</text>
+  <text class="small" x="190" y="153" text-anchor="middle" fill="#1976d2">wins on target distribution</text>
+  <!-- generalist curve: flat-ish, lower-mid -->
+  <path class="genfill" d="M 60 290 L 60 240 C 200 200, 400 200, 580 240 L 580 290 Z"/>
+  <path class="gen" d="M 60 240 C 200 200, 400 200, 580 240"/>
+  <text class="label" x="500" y="190" text-anchor="middle" fill="#ef6c00">generalist</text>
+  <text class="small" x="500" y="208" text-anchor="middle" fill="#ef6c00">flat across all</text>
+  <!-- equal-area annotation -->
+  <text class="small" x="320" y="335" text-anchor="middle">Same total area; different where the wins concentrate.</text>
+</svg>

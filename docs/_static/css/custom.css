@@ -1,0 +1,70 @@
+/* Brand polish + dark-mode SVG variables for the TroopAI ADK docs. */
+
+:root {
+  --pa-accent: #5b8def;
+  --pa-accent-dark: #3b5bb5;
+  --svg-stroke: #1c1e21;
+  --svg-fill: #eef2f8;
+  --svg-text: #1c1e21;
+}
+
+html[data-theme="dark"] {
+  --svg-stroke: #d6d8dc;
+  --svg-fill: #1c1e21;
+  --svg-text: #d6d8dc;
+}
+
+.sd-card {
+  border-radius: 12px;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.sd-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(91, 141, 239, 0.18);
+}
+
+.bd-content h1 {
+  letter-spacing: -0.01em;
+}
+
+img.svg-themed,
+svg.themed {
+  color: var(--svg-text);
+}
+
+/* Language switcher (T44.7) ----------------------------------- */
+
+.lang-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: 0.75rem;
+  padding: 0.15rem 0.5rem;
+  border: 1px solid var(--pst-color-border, #d6d8dc);
+  border-radius: 999px;
+}
+
+.lang-switcher__link {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  color: var(--pst-color-text-muted, #6c757d);
+}
+
+.lang-switcher__link:hover {
+  color: var(--pa-accent, #5b8def);
+  text-decoration: none;
+}
+
+.lang-switcher__link--current {
+  background: var(--pa-accent, #5b8def);
+  color: #fff;
+}
+
+html[data-theme="dark"] .lang-switcher__link--current {
+  color: #0f172a;
+}

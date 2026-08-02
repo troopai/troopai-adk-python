@@ -1,0 +1,30 @@
+name: ✨ Feature request
+description: Propose a capability or change to the ADK
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the use case and the smallest change that would unblock you.
+        Pointing at a similar feature in another agent framework is fine — but
+        frame the need in this ADK's terms.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / use case
+      description: What are you trying to do that the ADK does not support today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: The smallest change that would unblock you. An API sketch is welcome.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+    validations:
+      required: false

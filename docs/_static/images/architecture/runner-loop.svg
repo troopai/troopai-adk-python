@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 360" role="img"
+     aria-label="Runner agent loop with explicit boundaries — max_turns, max_handoffs, retries, cost budgets."
+     class="themed">
+  <defs>
+    <style>
+      .frame { fill: var(--svg-fill, #eef2f8); stroke: var(--svg-stroke, #1c1e21); stroke-width: 1.5; }
+      .step  { fill: #e3f2fd; stroke: #1565c0; stroke-width: 1.5; rx: 14; ry: 14; }
+      .bound { fill: #ffcdd2; stroke: #c62828; stroke-width: 1.8; stroke-dasharray: 6 3; rx: 16; ry: 16; }
+      .done  { fill: #c8e6c9; stroke: #2e7d32; stroke-width: 1.5; rx: 22; ry: 22; }
+      .label { font-family: 'Inter', sans-serif; fill: var(--svg-text, #1c1e21); font-size: 14px; font-weight: 600; }
+      .small { font-family: 'Inter', sans-serif; fill: var(--svg-text, #1c1e21); font-size: 12px; }
+      .title { font-family: 'Inter', sans-serif; fill: var(--svg-text, #1c1e21); font-size: 17px; font-weight: 700; }
+      .arrow { stroke: var(--svg-stroke, #1c1e21); stroke-width: 1.8; fill: none; marker-end: url(#tri3); }
+      .bndln { stroke: #c62828; stroke-width: 1.8; fill: none; marker-end: url(#tribnd); stroke-dasharray: 5 3; }
+    </style>
+    <marker id="tri3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--svg-stroke, #1c1e21)"/>
+    </marker>
+    <marker id="tribnd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#c62828"/>
+    </marker>
+  </defs>
+  <rect class="frame" x="10" y="10" width="740" height="340" rx="10"/>
+  <text class="title" x="380" y="38" text-anchor="middle">Runner agent loop — bounded everywhere</text>
+
+  <rect class="done" x="40" y="160" width="100" height="50"/>
+  <text class="label" x="90" y="190" text-anchor="middle">arun()</text>
+
+  <rect class="step" x="180" y="160" width="120" height="50"/>
+  <text class="label" x="240" y="190" text-anchor="middle">LLM step</text>
+
+  <rect class="step" x="340" y="80" width="120" height="50"/>
+  <text class="label" x="400" y="110" text-anchor="middle">tools</text>
+
+  <rect class="step" x="340" y="240" width="120" height="50"/>
+  <text class="label" x="400" y="270" text-anchor="middle">handoff</text>
+
+  <rect class="step" x="500" y="160" width="150" height="50"/>
+  <text class="label" x="575" y="190" text-anchor="middle">output guardrails</text>
+
+  <rect class="done" x="680" y="160" width="50" height="50"/>
+  <text class="label" x="705" y="190" text-anchor="middle">→</text>
+
+  <!-- Arrows in loop -->
+  <line x1="140" y1="185" x2="178" y2="185" class="arrow"/>
+  <line x1="300" y1="180" x2="338" y2="120" class="arrow"/>
+  <line x1="460" y1="120" x2="300" y2="180" class="arrow"/>
+  <line x1="300" y1="190" x2="338" y2="265" class="arrow"/>
+  <line x1="460" y1="265" x2="300" y2="190" class="arrow"/>
+  <line x1="300" y1="195" x2="498" y2="195" class="arrow"/>
+  <line x1="650" y1="185" x2="678" y2="185" class="arrow"/>
+
+  <!-- Boundaries -->
+  <rect class="bound" x="240" y="320" width="160" height="30"/>
+  <text class="small" x="320" y="338" text-anchor="middle">max_turns boundary</text>
+
+  <rect class="bound" x="440" y="320" width="180" height="30"/>
+  <text class="small" x="530" y="338" text-anchor="middle">max_handoffs + cost budget</text>
+
+  <line x1="240" y1="215" x2="240" y2="318" class="bndln"/>
+  <line x1="400" y1="295" x2="440" y2="318" class="bndln"/>
+</svg>

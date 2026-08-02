@@ -1,0 +1,28 @@
+{
+  "$schema": "../../src/troopai/adk/types/config/topology_config.schema.json",
+  "agents": {
+    "author": {
+      "name": "author",
+      "system_prompt": "Draft a one-paragraph answer to the user. If a reviewer asks for changes, revise.",
+      "llm": "claude-haiku-4-5-20251001"
+    },
+    "reviewer": {
+      "name": "reviewer",
+      "system_prompt": "Review the author's draft. Reply 'approved' if it is clear and correct, otherwise give one concrete fix.",
+      "llm": "claude-haiku-4-5-20251001"
+    }
+  },
+  "swarm": {
+    "members": ["author", "reviewer"],
+    "entry": "author",
+    "policy": {"type": "round_robin"},
+    "termination": {
+      "type": "or",
+      "conditions": [
+        {"type": "explicit_done"},
+        {"type": "max_turns", "limit": 6}
+      ]
+    },
+    "config": {"max_handoffs": 6}
+  }
+}

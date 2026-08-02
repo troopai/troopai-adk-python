@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/usr/bin/env python3 \"$(git rev-parse --show-toplevel)/.codex/hooks/docs_sync_reminder.py\"",
+            "timeout": 15,
+            "statusMessage": "Checking docstring documentation sync"
+          }
+        ]
+      }
+    ]
+  }
+}

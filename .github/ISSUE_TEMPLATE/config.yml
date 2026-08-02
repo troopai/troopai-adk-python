@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📚 Documentation
+    url: https://github.com/troopai/troopai-adk-python/tree/main/docs
+    about: Browse the ADK docs first — many questions are answered there.
+  - name: 💬 Questions & discussion
+    url: https://github.com/troopai/troopai-adk-python/discussions
+    about: For usage questions and open-ended discussion (if Discussions is enabled).

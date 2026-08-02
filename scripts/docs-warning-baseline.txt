@@ -1,0 +1,4 @@
+# troopai docs warning baseline (ASM-2026-08-01-troopai-adk-v3 G-04; normalized, sorted)
+# count: 2
+CONTRIBUTING.md: WARNING: 'myst' cross-reference target not found: 'CLA.md' [myst.xref_missing]
+CONTRIBUTING.md: WARNING: 'myst' cross-reference target not found: 'LICENSE' [myst.xref_missing]

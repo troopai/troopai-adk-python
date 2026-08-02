@@ -1,0 +1,105 @@
+name: Release — tag & publish artifacts
+
+# Step 2 of the release flow (see RELEASING.md). Fires when a release/v* PR
+# merges into main: verify the version, tag it, build the wheel + sdist, and
+# create the GitHub Release with those assets attached. No PyPI upload.
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  tag-and-release:
+    name: Tag + GitHub Release
+    # Only for a MERGED release/v* PR.
+    if: >-
+      github.event.pull_request.merged == true &&
+      startsWith(github.event.pull_request.head.ref, 'release/v')
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_COMMIT_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install build twine
+      - name: Verify checked-out release commit
+        run: |
+          if [ "$(git rev-parse HEAD)" != "$RELEASE_COMMIT_SHA" ]; then
+            echo "::error::checkout HEAD does not match release merge commit"
+            exit 1
+          fi
+      - name: Resolve + verify version
+        id: ver
+        run: |
+          branch_version="${GITHUB_HEAD_REF#release/v}"
+          file_version="$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")"
+          if [ "$branch_version" != "$file_version" ]; then
+            echo "::error::release branch version ($branch_version) != pyproject version ($file_version)"
+            exit 1
+          fi
+          echo "version=$file_version" >> "$GITHUB_OUTPUT"
+      - name: Build + validate artifacts
+        run: |
+          python -m build
+          python -m twine check dist/*
+      - name: Install built wheel smoke test
+        run: |
+          python -m venv /tmp/troopai-wheel-smoke
+          /tmp/troopai-wheel-smoke/bin/python -m pip install --upgrade pip
+          /tmp/troopai-wheel-smoke/bin/python -m pip install dist/*.whl
+          /tmp/troopai-wheel-smoke/bin/python - <<'PY'
+          import importlib.metadata
+          from pathlib import Path
+
+          import troopai.adk
+          from troopai.adk import Agent, Runner, function_tool
+
+          expected_version = "${{ steps.ver.outputs.version }}"
+          dist = importlib.metadata.distribution("troopai-adk-python")
+          assert dist.version == expected_version
+          assert troopai.adk.__version__ == expected_version
+          assert Path(dist.locate_file("troopai/adk/py.typed")).is_file()
+          assert Agent is not None
+          assert Runner is not None
+          assert function_tool is not None
+          PY
+          /tmp/troopai-wheel-smoke/bin/troopai --help >/dev/null
+      - name: Tag + create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${{ steps.ver.outputs.version }}"
+          tag="v${version}"
+          git fetch --tags --force
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git rev-parse "$tag^{commit}" >/dev/null 2>&1; then
+            existing_sha="$(git rev-parse "$tag^{commit}")"
+            if [ "$existing_sha" != "$RELEASE_COMMIT_SHA" ]; then
+              echo "::error::Tag $tag points at $existing_sha, expected $RELEASE_COMMIT_SHA"
+              exit 1
+            fi
+            echo "Tag $tag already exists at the release commit."
+          else
+            git tag -a "$tag" -m "Release $tag" "$RELEASE_COMMIT_SHA"
+            git push origin "$tag"
+          fi
+          if gh release view "$tag" >/dev/null 2>&1; then
+            asset_count="$(gh release view "$tag" --json assets --jq '.assets | length')"
+            if [ "$asset_count" -lt 2 ]; then
+              gh release upload "$tag" dist/* --clobber
+            fi
+          else
+            gh release create "$tag" dist/* \
+              --title "TroopAI ADK ${tag}" \
+              --notes "See CHANGELOG.md for details. Build artifacts attached (wheel + sdist)."
+          fi

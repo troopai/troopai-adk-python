@@ -1,0 +1,25 @@
+{
+  "$schema": "../../src/troopai/adk/types/config/topology_config.schema.json",
+  "agents": {
+    "outliner": {
+      "name": "outliner",
+      "system_prompt": "Produce a 3-bullet outline for the user's topic.",
+      "llm": "claude-haiku-4-5-20251001"
+    },
+    "writer": {
+      "name": "writer",
+      "system_prompt": "Expand the outline you receive into a short paragraph.",
+      "llm": "claude-haiku-4-5-20251001"
+    }
+  },
+  "graph": {
+    "id": "outline_then_write",
+    "nodes": {
+      "outliner": {"agent": "outliner"},
+      "writer": {"agent": "writer"}
+    },
+    "edges": [{"from": "outliner", "to": "writer"}],
+    "entry": "outliner",
+    "terminals": ["writer"]
+  }
+}

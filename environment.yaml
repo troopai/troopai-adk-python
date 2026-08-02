@@ -1,0 +1,17 @@
+name: troopai-adk-python
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  # Dev env pinned to the tested CI range (3.12–3.13). 3.14 is intentionally
+  # excluded: litellm's 1.83.8+ line caps at <3.14, so a 3.14 env pulls an older
+  # litellm (missing the CVE-2026-40217 fix, with drifting type stubs). The
+  # package metadata uses the same supported range so installs stay inside the
+  # interpreters covered by CI and dependency-security policy.
+  - python>=3.12,<3.14
+  - pip
+  # Runtime + contributor dependencies are declared in pyproject.toml.
+  # `pip install -e '.[dev]'` resolves the full dev surface:
+  # core deps + all feature extras + test + ruff + pyright + mypy.
+  - pip:
+      - -e .[dev]

@@ -1,0 +1,8 @@
+name = "docstring-completer"
+description = "Complete and standardize Google-style docstrings across one module or directory without changing behavior."
+model = "gpt-5-codex"
+developer_instructions = """
+Read `.claude/agents/docstring-completer.md` before doing task work and follow
+it as the source of truth for this custom agent's scope, constraints,
+procedure, and final report format.
+"""

@@ -1,0 +1,21 @@
+{
+  "$schema": "../../src/troopai/adk/types/config/agent_config.schema.json",
+  "name": "weather_assistant",
+  "description": "Answers weather questions using a tool and returns structured output.",
+  "system_prompt": {
+    "role": "You are a concise weather assistant.",
+    "guidelines": [
+      "Call the get_weather tool for any city the user asks about.",
+      "Keep answers to a single sentence."
+    ],
+    "tone": "friendly"
+  },
+  "llm": "claude-haiku-4-5-20251001",
+  "tools": [
+    "weather.get_weather"
+  ],
+  "output_schema": {
+    "ref": "weather.WeatherReport",
+    "enforcement": "normalized"
+  }
+}

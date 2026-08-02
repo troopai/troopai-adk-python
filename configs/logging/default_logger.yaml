@@ -1,0 +1,55 @@
+version: 1
+disable_existing_loggers: false  # don't silence litellm/httpx/pydantic loggers
+
+# NOTE: Console display is DISABLED by default — the terminal belongs to the
+# `VerboseConfig` event stream (see `troopai.adk.verbose`), and the rotating
+# `.log` file below is the system-of-record for classic log records. Mixing a
+# console StreamHandler with the verbose stream interleaves two outputs on
+# one terminal and garbles the coloured lifecycle panels. To re-enable
+# console log display, uncomment the `console` handler below and add
+# `console` to each `handlers:` list you want it on.
+
+formatters:
+  standard:
+    format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    datefmt: "%d/%b/%y - %H:%M:%S"
+  error:
+    format: "%(asctime)s - %(levelname)s <PID %(process)d:%(processName)s> %(name)s.%(funcName)s(): %(message)s"
+    datefmt: "%d/%b/%y - %H:%M:%S"
+
+handlers:
+  # console:
+  #   class: logging.StreamHandler
+  #   level: INFO
+  #   formatter: standard
+  #   stream: ext://sys.stdout
+  file:
+    class: logging.handlers.RotatingFileHandler
+    level: DEBUG
+    formatter: standard
+    filename: ./logs/troopai_adk.log
+    encoding: utf8
+    maxBytes: 104857600   # 100 MB
+    backupCount: 5        # keep 5 rotated files (troopai.adk.log.1 … .5)
+
+root:
+  level: INFO
+  handlers: [file]
+
+loggers:
+  troopai.adk:
+    level: INFO
+    propagate: no
+    handlers: [file]
+  LiteLLM:
+    level: WARNING
+    propagate: no
+    handlers: [file]
+  litellm:
+    level: WARNING
+    propagate: no
+    handlers: [file]
+  httpx:
+    level: WARNING
+    propagate: no
+    handlers: [file]
