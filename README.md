@@ -9,32 +9,33 @@ A lightweight, provider-agnostic Python framework for building multi-agent workf
 
 ## The concept
 
-An LLM produces language. An **agent** is what happens when language becomes
-action: tool calls, state transitions, side effects in the real world.
+An agent is a model that stopped talking and started doing: it calls tools,
+changes state, and leaves side effects in the world. One agent is useful. A
+unit of specialists that can't coordinate is a liability.
 
-A **troop** is what happens when agents stop acting alone — a coordinated unit
-of specialized agents moving in formation toward a single objective, under a
-leader with **command authority** over its unit: per-unit retries, token
-budgets, timeouts, and result inspection before a unit's output commits to
-shared state. Deterministic doctrine is enforced by the runtime; the leader's
-judgment operates inside it. Think command-and-control, not emergence.
+A **troop** puts that unit under a single leader with real authority — not a
+vibe in a system prompt, but authority the runtime enforces. The leader tasks
+each unit, and every unit executes inside per-unit doctrine: bounded retries,
+hard token budgets, timeouts, and output that only commits to shared state
+after inspection. The leader's judgment operates inside those rails —
+command-by-exception by default, direct micromanagement of any unit whenever
+you want it. Command and control, for agents.
 
-This is the deliberate opposite of a **swarm** — decentralized peers handing
-control to each other with no one in charge. The ADK already ships swarms
-(`Swarm`, policy-driven handoffs, composable termination). The **troop
-primitive** — the leader, its doctrine, and `TroopRunner` — is in active
-development and lands next on this tree.
+The ADK also ships the opposite topology on purpose. `Swarm` is decentralized:
+peers hand control to each other under a routing policy, nobody in charge —
+right for open-ended exploration. A troop is what you reach for when someone
+has to be accountable for the objective: production units with budgets,
+deadlines, and a leader that answers for them.
 
 ## Design tenets
 
-1. **Explicit over magical.** Orchestration you can read, debug, and step
-   through in a debugger beats orchestration hidden in a decorator.
-2. **One obvious way.** The ADK has opinions. Fewer knobs, sharper edges.
-3. **Everything is inspectable.** Every run emits structured traces — agent
-   decisions, tool I/O, token costs — because you can't optimize what you
-   can't see.
-4. **Benchmarks or it didn't happen.** Performance and quality claims come
-   with eval suite links, or they don't get made.
+1. **Explicit over magical.** If you can't step through it in a debugger, it
+   doesn't belong in the orchestration path.
+2. **One obvious way.** Fewer knobs, sharper edges — the ADK has opinions.
+3. **Everything is inspectable.** Decisions, tool I/O, and token costs are
+   structured traces, not anecdotes.
+4. **Benchmarks or it didn't happen.** Claims ship with eval evidence or not
+   at all — including this framework's own.
 
 ## Status
 
