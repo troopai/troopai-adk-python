@@ -44,7 +44,7 @@ jobs:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: pyproject.toml
-      - run: pip install -e ".[docs]"
+      - run: pip install -e ".[docs,guardrails]"
       - name: Strict docs build (-W), capture warnings
         # Never fails here: the warning-SET comparison in the next step is
         # the gate (see header). The build artifact proves sphinx completed.
@@ -68,6 +68,6 @@ jobs:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: pyproject.toml
-      - run: pip install -e ".[docs]"
+      - run: pip install -e ".[docs,guardrails]"
       - name: sphinx-build -b linkcheck
         run: sphinx-build -b linkcheck docs docs/_build

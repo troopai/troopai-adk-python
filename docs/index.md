@@ -94,7 +94,6 @@ See [Guides → Agents](guides/agents.md) for the next step.
 ```{toctree}
 :hidden:
 :maxdepth: 2
-:collapse: true
 
 foundations/index
 architecture/index

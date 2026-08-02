@@ -109,8 +109,32 @@ def check_pyproject(pyproject_path: Path) -> list[str]:
     return failures
 
 
+_ALLOWLIST_PATH = Path("scripts/.residual-allowlist")
+
+
+def _load_allowlist(repo: Path) -> tuple[set[str], set[tuple[str, int]]]:
+    """Shared G-06/G-09 allowlist (`scripts/.residual-allowlist`): bare paths and path:lineno entries."""
+    file_entries: set[str] = set()
+    line_entries: set[tuple[str, int]] = set()
+    allow = repo / _ALLOWLIST_PATH
+    if not allow.is_file():
+        return file_entries, line_entries
+    for raw in allow.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        entry = line.split()[0]
+        path_part, sep, lineno = entry.rpartition(":")
+        if sep and lineno.isdigit():
+            line_entries.add((path_part, int(lineno)))
+        else:
+            file_entries.add(entry)
+    return file_entries, line_entries
+
+
 def banner_scan(repo: Path, header_lines: int, self_path: Path | None = SELF_PATH) -> list[tuple[str, int, str]]:
     """Closed-license banner hits (relpath, lineno, line) in file headers."""
+    file_entries, line_entries = _load_allowlist(repo)
     hits: list[tuple[str, int, str]] = []
     for path in sorted(repo.rglob("*")):
         if not path.is_file() or path.is_symlink():
@@ -118,13 +142,22 @@ def banner_scan(repo: Path, header_lines: int, self_path: Path | None = SELF_PAT
         rel = path.relative_to(repo).as_posix()
         if rel.split("/", 1)[0] in SKIP_DIRS:
             continue
+        parts = rel.split("/")
+        if len(parts) > 1 and parts[0] == "docs" and parts[1] in ("_build", "build"):
+            continue  # sphinx build output — gitignored, never shipped
+        if rel == _ALLOWLIST_PATH.as_posix():
+            continue  # the allowlist's own reasons may name the terms
         if self_path is not None and path.resolve() == self_path:
+            continue
+        if rel in file_entries:
             continue
         try:
             text = path.read_bytes().decode("utf-8")
         except UnicodeDecodeError:
             continue
         for lineno, line in enumerate(text.splitlines()[:header_lines], start=1):
+            if (rel, lineno) in line_entries:
+                continue
             if _BANNER_RE.search(line):
                 hits.append((rel, lineno, line.strip()))
     hits.sort()

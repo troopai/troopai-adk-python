@@ -218,7 +218,7 @@ from troopai.adk.tools import DocumentSearchTool, FunctionTool, MemoryTool
 from troopai.adk.types.run import RunResult
 from troopai.adk.verbose import EventStyle, VerboseConfig
 
-__version__ = "5.1.0"
+__version__ = "0.1.0"
 
 __all__ = [
     # Flow error-trigger route literal (error_policy="route_to_error_handler")
