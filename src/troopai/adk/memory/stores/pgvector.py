@@ -217,7 +217,7 @@ class PgVectorStore:
                         "ns": record.namespace,
                         "content": record.content,
                         "meta": Jsonb(_meta_to_dict(record.metadata)),
-                        "emb": Vector(record.vector),
+                        "emb": Vector(list(record.vector)),
                         "created": record.created_at,
                         "updated": record.updated_at,
                     },
@@ -253,7 +253,7 @@ class PgVectorStore:
         if len(vector) != self._dim:
             raise ValueError(f"PgVectorStore: query dimension {len(vector)} != store dimension {self._dim}")
         where: list[sql.Composed | sql.SQL] = [sql.SQL("namespace = %(ns)s")]
-        params: dict[str, object] = {"ns": namespace, "q": Vector(vector), "k": k}
+        params: dict[str, object] = {"ns": namespace, "q": Vector(list(vector)), "k": k}
         if filter is not None:
             _apply_filter(filter, where, params)
         stmt = sql.SQL(
