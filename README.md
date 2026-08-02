@@ -1,9 +1,52 @@
 # TroopAI Agent Development Kit (ADK)
 
+**Where language becomes action.**
+
 A lightweight, provider-agnostic Python framework for building multi-agent workflows with 100+ LLMs via litellm.
 
 > [!NOTE]
 > The JavaScript/TypeScript version of this ADK will be released soon. Stay tuned!
+
+## The concept
+
+An LLM produces language. An **agent** is what happens when language becomes
+action: tool calls, state transitions, side effects in the real world.
+
+A **troop** is what happens when agents stop acting alone — a coordinated unit
+of specialized agents moving in formation toward a single objective, under a
+leader with **command authority** over its unit: per-unit retries, token
+budgets, timeouts, and result inspection before a unit's output commits to
+shared state. Deterministic doctrine is enforced by the runtime; the leader's
+judgment operates inside it. Think command-and-control, not emergence.
+
+This is the deliberate opposite of a **swarm** — decentralized peers handing
+control to each other with no one in charge. The ADK already ships swarms
+(`Swarm`, policy-driven handoffs, composable termination). The **troop
+primitive** — the leader, its doctrine, and `TroopRunner` — is in active
+development and lands next on this tree.
+
+## Design tenets
+
+1. **Explicit over magical.** Orchestration you can read, debug, and step
+   through in a debugger beats orchestration hidden in a decorator.
+2. **One obvious way.** The ADK has opinions. Fewer knobs, sharper edges.
+3. **Everything is inspectable.** Every run emits structured traces — agent
+   decisions, tool I/O, token costs — because you can't optimize what you
+   can't see.
+4. **Benchmarks or it didn't happen.** Performance and quality claims come
+   with eval suite links, or they don't get made.
+
+## Status
+
+- **Today (v0.1.0 groundwork):** agents, `Runner` (sync/async/streaming),
+  swarms, graphs, flows, task pipelines, tools, handoffs, guardrails, memory
+  and sessions, MCP, A2A, sandboxed code execution, durable execution
+  (Temporal/Restate), OpenTelemetry tracing, deploy targets, and a strict
+  JSON/YAML config layer — all in this repository, MIT licensed.
+- **Next:** the troop primitive (leader doctrine + commander + `TroopRunner`).
+- **Then:** `troopai-evals-python` (benchmarks vs. other frameworks) and
+  `troopai-cookbook-python` (production-grade examples) — build with the ADK,
+  prove it with the evals, learn it from the cookbook.
 
 ## Installation
 
