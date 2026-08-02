@@ -69,7 +69,7 @@ async def test_upsert_sql_refreshes_namespace_on_conflict(monkeypatch: pytest.Mo
     monkeypatch.setattr(store, "_ensure_ready", _fake_ensure_ready)
     record = VectorRecord(
         id="a",
-        vector=(1.0, 0.0),
+        vector=[1.0, 0.0],
         namespace="u1",
         content="a",
         metadata=MemoryMetadata(source=MemorySource.MANUAL),

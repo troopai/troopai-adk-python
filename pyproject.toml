@@ -108,7 +108,7 @@ gemini = ["google-genai>=1.0.0"]
 
 # Model Context Protocol client. Enables MCPServer integration.
 # See src/troopai/adk/mcp/.
-mcp = ["mcp>=1.24.0"]
+mcp = ["mcp>=1.24.0,<2"]
 
 # Agent-to-Agent (A2A) protocol — peer client + expose local Agents
 # as A2A servers. The [http-server] extra pulls in starlette and

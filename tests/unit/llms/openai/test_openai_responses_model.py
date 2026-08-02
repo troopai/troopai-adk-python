@@ -92,7 +92,7 @@ def _make_response(
         input_tokens=5,
         output_tokens=10,
         total_tokens=15,
-        input_tokens_details=InputTokensDetails(cached_tokens=0),
+        input_tokens_details=InputTokensDetails(cached_tokens=0, cache_write_tokens=0),
         output_tokens_details=OutputTokensDetails(reasoning_tokens=0),
     )
     return Response.model_construct(
@@ -139,7 +139,7 @@ def _make_status_response(
         input_tokens=7,
         output_tokens=3,
         total_tokens=10,
-        input_tokens_details=InputTokensDetails(cached_tokens=0),
+        input_tokens_details=InputTokensDetails(cached_tokens=0, cache_write_tokens=0),
         output_tokens_details=OutputTokensDetails(reasoning_tokens=0),
     )
     # SimpleNamespace duck-types the ``incomplete_details.reason`` the converter
