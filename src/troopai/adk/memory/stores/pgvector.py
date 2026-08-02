@@ -116,7 +116,10 @@ def _row_to_record(row: tuple[object, ...]) -> VectorRecord:
     # is fixed by every SELECT in this module (id, namespace, content, metadata,
     # embedding, created_at, updated_at).  cast() narrows each slot safely.
     meta_dict = cast("dict[str, object]", row[3])
-    embedding = cast("list[float]", row[4])
+    raw_embedding = row[4]
+    # pgvector >= 0.5 returns a non-iterable Vector (use to_list()); 0.4 returns
+    # an iterable one (or a plain list). Normalize across both.
+    embedding = raw_embedding.to_list() if hasattr(raw_embedding, "to_list") else cast("list[float]", raw_embedding)
     return VectorRecord(
         id=str(row[0]),
         vector=tuple(float(x) for x in embedding),
