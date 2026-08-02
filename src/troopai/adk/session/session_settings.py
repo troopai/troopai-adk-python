@@ -16,3 +16,8 @@ class SessionSettings(BaseModel):
     limit: int | None = None
     """Default maximum number of items to retrieve from the session via ``get()``.
     If ``None``, all items are returned. Default is None (no limit)."""
+
+
+def _g08_calibration_probe() -> int:
+    """Deliberate type error for the G-08 CI calibration probe (reverted after)."""
+    return "not an int"
