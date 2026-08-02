@@ -65,7 +65,7 @@ html_theme = "sphinx_book_theme"
 html_title = project
 html_static_path = ["_static"]
 html_css_files = ["css/custom.css"]
-html_js_files = ["js/mermaid-theme.js"]
+html_js_files = ["js/mermaid-theme.js", "js/sidebar-collapse.js"]
 html_theme_options = {
     "repository_url": "https://github.com/troopai/troopai-adk-python",
     "use_repository_button": True,
@@ -73,9 +73,9 @@ html_theme_options = {
     "use_edit_page_button": True,
     "path_to_docs": "docs",
     "home_page_in_toc": False,
-    "show_navbar_depth": 1,
+    "show_navbar_depth": 2,
     "max_navbar_depth": 5,
-    "collapse_navbar": True,
+    "collapse_navbar": False,
     "icon_links": [
         {
             "name": "GitHub",
