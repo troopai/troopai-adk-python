@@ -1,0 +1,24 @@
+name: Dependency Review
+
+# Fails PRs that introduce dependencies with known vulnerabilities (GitHub
+# Advisory Database). Complements security.yml's pip-audit job: that one
+# audits the full resolved graph, this one diffs exactly what the PR changes
+# and blocks at review time. The action is pinned to a full semver tag —
+# upstream publishes no floating v4/v5 major ref.
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-review:
+    name: Block known-vulnerable deps
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/dependency-review-action@v4.9.0
+        with:
+          fail-on-severity: moderate

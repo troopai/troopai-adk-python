@@ -1,0 +1,43 @@
+name: Repo guards
+
+# Migration guard gates (ASM v3 G-06 + G-09-provenance) on every PR and on
+# pushes to main — keeps the post-rename tree clean as it evolves:
+#   - ci_residual_sweep.py: zero source-brand / closed-license residuals
+#     outside the versioned allowlist scripts/.residual-allowlist;
+#   - ci_provenance_check.py: MIT provenance (LICENSE SPDX text match,
+#     pyproject license field + classifier, no private classifier, no
+#     closed-license banners in file headers).
+# Both scripts are stdlib-only and read the tree directly — no install step.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: repo-guards-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  residual-sweep:
+    name: G-06 residual sweep
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: python scripts/ci_residual_sweep.py --repo .
+
+  provenance:
+    name: G-09 MIT provenance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: python scripts/ci_provenance_check.py
