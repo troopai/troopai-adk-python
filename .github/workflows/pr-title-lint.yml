@@ -1,0 +1,33 @@
+name: PR title lint
+
+# Enforces Conventional Commits on PR titles so squash-merge commits keep
+# the git log machine-readable (matches [tool.commitizen] conventional
+# commits in pyproject.toml): "type(optional-scope): description", with an
+# optional "!" breaking marker. Implemented as a plain bash regex — no
+# third-party action needed for one pattern check.
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  conventional-title:
+    name: Conventional commit title
+    runs-on: ubuntu-latest
+    env:
+      PR_TITLE: ${{ github.event.pull_request.title }}
+    steps:
+      - name: Check title format
+        run: |
+          pattern='^(feat|fix|docs|style|refactor|test|chore|build|ci|perf|revert)(\([a-z0-9._/-]+\))?!?: .+'
+          if [[ "$PR_TITLE" =~ $pattern ]]; then
+            echo "OK: $PR_TITLE"
+          else
+            echo "::error::PR title must follow Conventional Commits: type(scope): description"
+            echo "::error::Allowed types: feat, fix, docs, style, refactor, test, chore, build, ci, perf, revert"
+            echo "::error::Got: $PR_TITLE"
+            exit 1
+          fi

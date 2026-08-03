@@ -2,7 +2,10 @@ name: Release — tag & publish artifacts
 
 # Step 2 of the release flow (see RELEASING.md). Fires when a release/v* PR
 # merges into main: verify the version, tag it, build the wheel + sdist, and
-# create the GitHub Release with those assets attached. No PyPI upload.
+# create the GitHub Release with those assets attached. The publish-pypi job
+# then uploads the SAME artifacts to PyPI via OIDC trusted publishing (no
+# long-lived token), gated by the `pypi` GitHub Environment's required
+# reviewer approval — that approval is the point of no return.
 
 on:
   pull_request:
@@ -103,3 +106,33 @@ jobs:
               --title "TroopAI ADK ${tag}" \
               --notes "See CHANGELOG.md for details. Build artifacts attached (wheel + sdist)."
           fi
+      # Hand the exact artifacts that were verified above (twine check +
+      # clean-venv smoke) to the publish job — never a rebuild.
+      - uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist/*
+          retention-days: 1
+
+  publish-pypi:
+    name: Publish to PyPI (OIDC)
+    # Same gate as tag-and-release; `needs` alone would also skip this job
+    # for non-release PR closures, the condition is repeated for clarity.
+    needs: tag-and-release
+    if: >-
+      github.event.pull_request.merged == true &&
+      startsWith(github.event.pull_request.head.ref, 'release/v')
+    runs-on: ubuntu-latest
+    # Trusted publishing: the short-lived OIDC token is minted only inside
+    # the `pypi` environment, whose required-reviewer approval is the human
+    # point of no return (see RELEASING.md).
+    environment: pypi
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1

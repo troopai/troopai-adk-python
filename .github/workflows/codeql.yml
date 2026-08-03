@@ -1,0 +1,34 @@
+name: CodeQL
+
+# CodeQL static analysis (GitHub code scanning). Runs on every PR to main
+# and weekly so newly-published queries re-scan the default branch. Free on
+# public repos without GitHub Advanced Security; the pip-audit / bandit CLI
+# scans stay in security.yml.
+#
+# Python analysis needs no build: CodeQL extracts straight from source.
+
+on:
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 8 * * 4" # weekly, Thursday 08:00 UTC
+
+permissions:
+  actions: read
+  contents: read
+  security-events: write # upload results to the Security > Code scanning tab
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Analyze (python)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: python
+      - uses: github/codeql-action/analyze@v4

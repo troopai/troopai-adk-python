@@ -1,0 +1,73 @@
+name: Docs
+
+# Docs quality gates (ASM v3 G-04), blocking on PRs that touch the docs
+# surface:
+#   1. sphinx-build -W (warnings-as-errors) — captured, not self-blocking;
+#   2. ci_docs_warning_delta.py — fails only on NEW warnings vs
+#      scripts/docs-warning-baseline.txt, plus the dropped-page sweep;
+#   3. ci_docs_icon_lint.py — landing/section index pages stay icon-free.
+# The delta script is the single blocking authority on warnings: with
+# pre-existing baseline warnings sphinx's own -W exit code is expected
+# non-zero, so step 1 never fails the job by itself.
+# A weekly linkcheck runs as a non-blocking report (external links rot on
+# their own schedule; maintainers triage from the job log).
+
+on:
+  pull_request:
+    paths:
+      - "docs/**"
+      - "pyproject.toml" # the [docs] extra pins live here
+      - "scripts/ci_docs_warning_delta.py"
+      - "scripts/ci_docs_icon_lint.py"
+      - "scripts/docs-warning-baseline.txt"
+      - ".github/workflows/docs.yml"
+  schedule:
+    - cron: "0 7 * * 1" # weekly, Monday 07:00 UTC — linkcheck report
+  workflow_dispatch: # manual linkcheck run
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gates:
+    name: Docs build + warning delta + icon lint
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: pip install -e ".[docs,guardrails]"
+      - name: Strict docs build (-W), capture warnings
+        # Never fails here: the warning-SET comparison in the next step is
+        # the gate (see header). The build artifact proves sphinx completed.
+        run: "{ sphinx-build -W -b html docs docs/_build 2>&1 || true; } | tee docs-warnings.log"
+      - name: Verify the build completed
+        run: test -f docs/_build/index.html
+      - name: Warning delta + dropped-page sweep (blocking)
+        run: python scripts/ci_docs_warning_delta.py --warnings-file docs-warnings.log
+      - name: Icon lint (blocking)
+        run: python scripts/ci_docs_icon_lint.py
+
+  linkcheck:
+    name: Linkcheck (non-blocking report)
+    if: github.event_name != 'pull_request'
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: pip install -e ".[docs,guardrails]"
+      - name: sphinx-build -b linkcheck
+        run: sphinx-build -b linkcheck docs docs/_build

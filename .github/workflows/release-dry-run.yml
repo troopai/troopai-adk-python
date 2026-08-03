@@ -1,0 +1,39 @@
+name: Release dry-run
+
+# Maintainer-triggered rehearsal of the release path with ZERO external
+# side effects: build the wheel + sdist, twine-check the metadata, install
+# the wheel into a fresh venv, and smoke-test import + CLI from OUTSIDE the
+# repo (src-layout can mask packaging gaps when importing from the checkout).
+# Nothing here uploads anywhere — the real publish path is release-tag.yml.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dry-run:
+    name: Build + verify artifacts (no upload)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: pip install -e '.[dev]'
+      - run: pip install build twine
+      - name: Build artifacts
+        run: python -m build
+      - name: Validate metadata
+        run: python -m twine check dist/*
+      - name: Fresh-venv install + smoke test (from /tmp)
+        run: |
+          python -m venv /tmp/troopai-dry-run
+          /tmp/troopai-dry-run/bin/python -m pip install --upgrade pip
+          /tmp/troopai-dry-run/bin/python -m pip install dist/*.whl
+          cd /tmp
+          /tmp/troopai-dry-run/bin/python -c "import troopai.adk"
+          /tmp/troopai-dry-run/bin/troopai --help >/dev/null
