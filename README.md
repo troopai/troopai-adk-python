@@ -2,6 +2,9 @@
 
 **Where language becomes action.**
 
+[![CI](https://github.com/troopai/troopai-adk-python/actions/workflows/ci.yml/badge.svg)](https://github.com/troopai/troopai-adk-python/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/troopai/troopai-adk-python/branch/main/graph/badge.svg)](https://codecov.io/gh/troopai/troopai-adk-python)
+
 A lightweight, provider-agnostic Python framework for building multi-agent workflows with 100+ LLMs via litellm.
 
 > [!NOTE]
