@@ -28,7 +28,7 @@ jobs:
         with:
           fetch-depth: 0 # commitizen needs full history + tags
           ref: main
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - run: pip install "commitizen>=4.4.0"
